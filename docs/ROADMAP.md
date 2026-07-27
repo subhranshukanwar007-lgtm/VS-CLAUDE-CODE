@@ -11,13 +11,24 @@ and where each one plugs into the existing architecture.
 ## Social platform integrations (Instagram, Facebook, YouTube, LinkedIn,
 ## Threads, Pinterest, TikTok, X, WhatsApp)
 
-**Status:** scheduling engine is real and tested; actual publishing to any
-platform is not implemented. `app/integrations/log_publisher.py` is the
-working default (marks a post published, logs it, no network call).
+**Status:** outbound publishing is not implemented (scheduling engine is real
+and tested; `app/integrations/log_publisher.py` is the working default —
+marks a post published, logs it, no network call). **Inbound comment capture
+is implemented** for Instagram/Facebook: register your business account's ID
+(Settings → Connected accounts, or `POST /social-accounts`) and configure a
+Meta webhook pointing at `/api/v1/webhooks/meta` (see `.env.example` for the
+setup steps) — comments on your posts get verified via Meta's real
+X-Hub-Signature-256 HMAC scheme and turned into CRM leads automatically
+(`app/services/engagement_service.py`), deduped per commenter so repeat
+engagement adds a note instead of a duplicate lead. This can't be tested
+fully end-to-end without a real Meta Developer App and a public HTTPS URL for
+the callback, which this repo can't provide on its own.
 
-**To add a platform:**
+**To add outbound publishing for a platform:**
 1. Implement OAuth connect flow, storing tokens on `SocialAccount`
-   (`app/models/social_account.py` already has the fields).
+   (`app/models/social_account.py` already has the fields — the current
+   `/social-accounts` API only sets `handle`/`external_account_id` today, not
+   tokens; a real OAuth flow would populate those too).
 2. Subclass `Publisher` (`app/integrations/base.py`) using that platform's
    official API to actually post.
 3. Register it in `app/integrations/registry.py`.

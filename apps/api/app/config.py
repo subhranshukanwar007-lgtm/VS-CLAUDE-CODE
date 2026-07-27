@@ -58,6 +58,14 @@ class Settings(BaseSettings):
     higgsfield_api_secret: str | None = None
     higgsfield_model: str = "higgsfield-ai/soul/standard"
 
+    # Meta (Instagram/Facebook) webhooks — https://developers.facebook.com/docs/graph-api/webhooks
+    # META_WEBHOOK_VERIFY_TOKEN: a string you invent and put in both here and the
+    # Meta App dashboard's webhook config, so Meta can prove it's really them.
+    # META_APP_SECRET: from the Meta App dashboard, used to verify the
+    # X-Hub-Signature-256 header on every incoming event.
+    meta_app_secret: str | None = None
+    meta_webhook_verify_token: str | None = None
+
     # Storage (S3-compatible)
     s3_endpoint_url: str | None = None
     s3_access_key: str | None = None

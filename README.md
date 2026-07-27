@@ -70,8 +70,14 @@ tracked in the roadmap.
   draft Post in the content calendar, reusing the scheduler you already have.
   `POST /video/{id}/thumbnail` generates a thumbnail image (Replicate
   `flux-schnell`) for it.
+- **Engagement capture**: a real Meta webhook receiver
+  (`app/services/engagement_service.py`, `POST /api/v1/webhooks/meta`) that
+  verifies Meta's X-Hub-Signature-256 HMAC and turns comments on your
+  Instagram/Facebook posts into CRM leads automatically, deduped per
+  commenter. Requires a real Meta Developer App + a public HTTPS callback URL
+  to actually receive events — see `.env.example` for setup.
 - **Notifications**: in-app notifications created on lead/deal/post/follow-up/
-  video events and daily/weekly/monthly summaries
+  video/engagement events and daily/weekly/monthly summaries
 - **Security**: rate limiting (slowapi), an audit log middleware, Pydantic
   validation everywhere, bcrypt password hashing
 
@@ -88,11 +94,12 @@ tracked in the roadmap.
   generation with live status polling, video preview, one-click thumbnail
   generation, and a "create post from this video" action
 - AI Agents: chat UI for all 12 agents
-- Settings: profile + brand voice + follow-up automation window
+- Settings: profile + brand voice + follow-up automation window + connected
+  accounts (register a business account ID for comment-to-lead capture)
 
 Verified end-to-end in a real browser against the live backend (registration,
 CRM, calendar, agents, settings, follow-up automation, video generation) with
-zero console errors. `tsc`, `eslint`, and `next build` all pass; 48 backend
+zero console errors. `tsc`, `eslint`, and `next build` all pass; 56 backend
 pytest tests pass against a real Postgres database; ruff is clean.
 
 ## Quickstart

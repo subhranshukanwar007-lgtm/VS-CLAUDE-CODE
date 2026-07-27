@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ConnectedAccounts } from "@/components/settings/connected-accounts";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import type { User } from "@/lib/types";
@@ -99,6 +100,19 @@ export default function SettingsPage() {
               {saving ? "Saving..." : "Save changes"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Connected accounts</CardTitle>
+          <CardDescription>
+            Register your Instagram/Facebook business account so comments on your posts are automatically captured
+            as CRM leads
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ConnectedAccounts />
         </CardContent>
       </Card>
     </div>

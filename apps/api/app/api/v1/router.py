@@ -10,9 +10,11 @@ from app.api.v1 import (
     notifications,
     pipelines,
     posts,
+    social_accounts,
     tasks,
     users,
     video,
+    webhooks,
 )
 
 api_router = APIRouter()
@@ -28,3 +30,5 @@ api_router.include_router(notifications.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(ai.router)
 api_router.include_router(video.router)
+api_router.include_router(social_accounts.router)
+api_router.include_router(webhooks.router)

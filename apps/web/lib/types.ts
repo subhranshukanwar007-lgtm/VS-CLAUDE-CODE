@@ -109,6 +109,14 @@ export type Platform =
 export type PostFormat = "reel" | "post" | "story" | "carousel" | "video";
 export type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed";
 
+export interface SocialAccount {
+  id: string;
+  platform: Platform;
+  handle: string;
+  external_account_id: string | null;
+  is_active: boolean;
+}
+
 export interface Post {
   id: string;
   author_id: string;

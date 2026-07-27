@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,6 +32,9 @@ class LeadStatus(StrEnum):
 
 class Lead(BaseModel):
     __tablename__ = "leads"
+    __table_args__ = (
+        Index("ix_leads_owner_source_external_id", "owner_id", "source", "external_platform_id"),
+    )
 
     owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     stage_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -47,6 +50,9 @@ class Lead(BaseModel):
     estimated_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(500), nullable=True)
     last_follow_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    external_platform_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="Commenter/sender ID from the source platform, for dedupe on repeat engagement"
+    )
 
     owner: Mapped["User"] = relationship(back_populates="leads")  # noqa: F821
     stage: Mapped["PipelineStage | None"] = relationship(back_populates="leads")  # noqa: F821
