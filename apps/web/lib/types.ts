@@ -207,7 +207,7 @@ export interface FollowUpResult {
   task: Task;
 }
 
-export type VideoProviderKind = "replicate";
+export type VideoProviderKind = "replicate" | "higgsfield";
 export type VideoGenerationStatus = "pending" | "processing" | "succeeded" | "failed";
 
 export interface VideoGeneration {
@@ -217,6 +217,7 @@ export interface VideoGeneration {
   prompt: string;
   status: VideoGenerationStatus;
   video_url: string | null;
+  thumbnail_url: string | null;
   error: string | null;
   post_id: string | null;
   created_at: string;

@@ -61,12 +61,15 @@ tracked in the roadmap.
   `POST /leads/{id}/follow-up` (a "suggest follow-up" button in the CRM UI)
 - **AI video generation**: prompt (or image, for image-to-video) in, a real
   video out, via a pluggable `VideoProvider` (`app/services/video/`) — ships
-  with a working Replicate integration. Generation is async (jobs take
-  30s–minutes), so it's submit-then-poll: a Celery beat task polls every
-  in-flight job every 30s, and `GET /video/{id}` also polls live for a
-  faster feel in the UI. `POST /video/{id}/attach-to-post` turns a finished
-  video straight into a draft Post in the content calendar — the
-  generate-to-post loop closes there, reusing the scheduler you already have.
+  with two working integrations, Replicate (broad model catalog) and
+  Higgsfield (avatar/persona "soul" models), both verified against each
+  vendor's own API docs. Generation is async (jobs take 30s–minutes), so it's
+  submit-then-poll: a Celery beat task polls every in-flight job every 30s,
+  and `GET /video/{id}` also polls live for a faster feel in the UI.
+  `POST /video/{id}/attach-to-post` turns a finished video straight into a
+  draft Post in the content calendar, reusing the scheduler you already have.
+  `POST /video/{id}/thumbnail` generates a thumbnail image (Replicate
+  `flux-schnell`) for it.
 - **Notifications**: in-app notifications created on lead/deal/post/follow-up/
   video events and daily/weekly/monthly summaries
 - **Security**: rate limiting (slowapi), an audit log middleware, Pydantic
@@ -81,14 +84,15 @@ tracked in the roadmap.
   indicator and a one-click "suggest follow-up" action
 - Content calendar: scheduling form + status-tracked post list
 - AI Content Studio: caption/hashtag/script generators with provider choice
-- AI Video Studio: prompt-to-video generation with live status polling, video
-  preview, and a "create post from this video" action
+- AI Video Studio: provider picker (Replicate/Higgsfield), prompt-to-video
+  generation with live status polling, video preview, one-click thumbnail
+  generation, and a "create post from this video" action
 - AI Agents: chat UI for all 12 agents
 - Settings: profile + brand voice + follow-up automation window
 
 Verified end-to-end in a real browser against the live backend (registration,
 CRM, calendar, agents, settings, follow-up automation, video generation) with
-zero console errors. `tsc`, `eslint`, and `next build` all pass; 41 backend
+zero console errors. `tsc`, `eslint`, and `next build` all pass; 48 backend
 pytest tests pass against a real Postgres database; ruff is clean.
 
 ## Quickstart

@@ -77,12 +77,17 @@ a Celery task that evaluates workflows on relevant events (lead created, post
 published, etc. — the `notify()` call sites in `app/api/v1/` are exactly where
 you'd also fire workflow evaluation).
 
-## Email marketing, WhatsApp integration
+## Email marketing, WhatsApp integration, calendar meeting booking
 
 **Status:** not built. `notification_service.py` only creates in-app
-notifications today. Wiring in an email provider (Postmark/SES/SendGrid) or
-WhatsApp Business API is a matter of adding a new notification "channel" and
-calling it from the same `notify()` call sites.
+notifications today — lead follow-ups, for example, create a task and an
+in-app notification, not an actual outbound email. Wiring in an email
+provider (Postmark/SES/SendGrid) or WhatsApp Business API is a matter of
+adding a new notification "channel" and calling it from the same `notify()`
+call sites. Booking an actual meeting on someone's calendar (as opposed to
+scheduling a *content* post, which is already built) needs Google Calendar
+OAuth scopes beyond the sign-in scope currently used, plus a
+`CalendarEvent`-style model — a distinct feature from the content scheduler.
 
 ## Competitor tracking, trend tracking, audience insights
 

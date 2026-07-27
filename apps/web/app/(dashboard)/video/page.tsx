@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Loader2 } from "lucide-react";
+import { Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { AttachToPostDialog } from "@/components/video/attach-to-post-dialog";
 import { api, ApiError } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/utils";
-import type { VideoGeneration, VideoGenerationStatus } from "@/lib/types";
+import type { VideoGeneration, VideoGenerationStatus, VideoProviderKind } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 4000;
 const IN_FLIGHT: VideoGenerationStatus[] = ["pending", "processing"];
@@ -26,13 +27,25 @@ const STATUS_VARIANT: Record<VideoGenerationStatus, "secondary" | "warning" | "s
   failed: "destructive",
 };
 
+const PROVIDER_LABEL: Record<VideoProviderKind, string> = {
+  replicate: "Replicate",
+  higgsfield: "Higgsfield",
+};
+
+const PROVIDER_HINT: Record<VideoProviderKind, string> = {
+  replicate: "owner/name slug — browse options at replicate.com/collections/text-to-video",
+  higgsfield: "Higgsfield model_id, e.g. higgsfield-ai/soul/standard — check your Higgsfield dashboard",
+};
+
 export default function VideoStudioPage() {
   const [generations, setGenerations] = useState<VideoGeneration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [provider, setProvider] = useState<VideoProviderKind>("replicate");
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [thumbnailingId, setThumbnailingId] = useState<string | null>(null);
   const generationsRef = useRef(generations);
 
   useEffect(() => {
@@ -68,6 +81,7 @@ export default function VideoStudioPage() {
     try {
       const generation = await api.post<VideoGeneration>("/video/generate", {
         prompt,
+        provider,
         model: model || undefined,
         extra_params: imageUrl ? { image: imageUrl } : undefined,
       });
@@ -77,12 +91,32 @@ export default function VideoStudioPage() {
       toast.success("Video generation started");
     } catch (err) {
       if (err instanceof ApiError && err.status === 503) {
-        toast.error("No video provider is configured. Set REPLICATE_API_TOKEN in the backend .env.");
+        toast.error(
+          provider === "higgsfield"
+            ? "Higgsfield isn't configured. Set HIGGSFIELD_API_KEY and HIGGSFIELD_API_SECRET in the backend .env."
+            : "No video provider is configured. Set REPLICATE_API_TOKEN in the backend .env."
+        );
       } else {
         toast.error(err instanceof ApiError ? err.message : "Could not start generation");
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function generateThumbnail(generation: VideoGeneration) {
+    setThumbnailingId(generation.id);
+    try {
+      const updated = await api.post<VideoGeneration>(`/video/${generation.id}/thumbnail`);
+      setGenerations((prev) => prev.map((g) => (g.id === generation.id ? updated : g)));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 503) {
+        toast.error("Thumbnail generation needs REPLICATE_API_TOKEN set in the backend .env.");
+      } else {
+        toast.error(err instanceof ApiError ? err.message : "Could not generate thumbnail");
+      }
+    } finally {
+      setThumbnailingId(null);
     }
   }
 
@@ -100,10 +134,22 @@ export default function VideoStudioPage() {
         <Card>
           <CardHeader>
             <CardTitle>Generate a video</CardTitle>
-            <CardDescription>Powered by Replicate — any text-to-video or image-to-video model</CardDescription>
+            <CardDescription>Choose Replicate (broad model catalog) or Higgsfield (avatar/persona models)</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label>Provider</Label>
+                <Select value={provider} onValueChange={(v) => setProvider(v as VideoProviderKind)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="replicate">{PROVIDER_LABEL.replicate}</SelectItem>
+                    <SelectItem value="higgsfield">{PROVIDER_LABEL.higgsfield}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="prompt">Prompt</Label>
                 <Textarea
@@ -121,11 +167,9 @@ export default function VideoStudioPage() {
                   id="model"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  placeholder="owner/name — defaults to the backend's configured model"
+                  placeholder={`Defaults to the backend's configured ${PROVIDER_LABEL[provider]} model`}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Browse options at replicate.com/collections/text-to-video
-                </p>
+                <p className="text-xs text-muted-foreground">{PROVIDER_HINT[provider]}</p>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="imageUrl">Source image URL (optional, for image-to-video)</Label>
@@ -135,6 +179,13 @@ export default function VideoStudioPage() {
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://..."
                 />
+                {provider === "higgsfield" && (
+                  <p className="text-xs text-muted-foreground">
+                    For avatar/voice inputs specific to your Higgsfield account (reference face, voice ID), use the
+                    API directly with an `extra_params` body until your exact field names are confirmed against your
+                    dashboard.
+                  </p>
+                )}
               </div>
               <Button type="submit" disabled={submitting}>
                 {submitting ? "Starting..." : "Generate video"}
@@ -163,6 +214,7 @@ export default function VideoStudioPage() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline">{PROVIDER_LABEL[generation.provider]}</Badge>
                   <span>{generation.model}</span>
                   <span>·</span>
                   <span>{formatDateTime(generation.created_at)}</span>
@@ -171,7 +223,16 @@ export default function VideoStudioPage() {
                 {generation.status === "succeeded" && generation.video_url && (
                   <>
                     <video src={generation.video_url} controls className="w-full max-w-md rounded-lg border border-border/60" />
-                    <div>
+
+                    {generation.thumbnail_url && (
+                      <img
+                        src={generation.thumbnail_url}
+                        alt="Generated thumbnail"
+                        className="h-24 w-24 rounded-lg border border-border/60 object-cover"
+                      />
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2">
                       {generation.post_id ? (
                         <Badge variant="outline">Added to content calendar</Badge>
                       ) : (
@@ -183,6 +244,17 @@ export default function VideoStudioPage() {
                             )
                           }
                         />
+                      )}
+                      {!generation.thumbnail_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={thumbnailingId === generation.id}
+                          onClick={() => generateThumbnail(generation)}
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          {thumbnailingId === generation.id ? "Generating thumbnail..." : "Generate thumbnail"}
+                        </Button>
                       )}
                     </div>
                   </>

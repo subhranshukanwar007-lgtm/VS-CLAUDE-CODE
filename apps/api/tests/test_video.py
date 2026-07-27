@@ -3,6 +3,7 @@ from app.database import get_db
 from app.main import app
 from app.models.video_generation import VideoGenerationStatus
 from app.services.video.base import VideoPollResult, VideoProvider
+from app.services.video.higgsfield_provider import parse_status_response
 
 
 class _FakeProvider(VideoProvider):
@@ -115,3 +116,72 @@ async def test_poll_all_pending_is_idempotent(auth_client, monkeypatch):
         assert second == 0
     finally:
         db.close()
+
+
+def test_generate_with_higgsfield_without_credentials_returns_503(auth_client):
+    resp = auth_client.post(
+        "/api/v1/video/generate", json={"prompt": "a golden retriever surfing", "provider": "higgsfield"}
+    )
+    assert resp.status_code == 503
+    assert "HIGGSFIELD" in resp.json()["detail"]
+
+
+def test_higgsfield_parse_status_queued():
+    result = parse_status_response({"status": "queued", "request_id": "abc"})
+    assert result.status == VideoGenerationStatus.PENDING
+    assert result.video_url is None
+
+
+def test_higgsfield_parse_status_completed_with_video():
+    result = parse_status_response(
+        {"status": "completed", "request_id": "abc", "video": {"url": "https://cdn.example/soul.mp4"}}
+    )
+    assert result.status == VideoGenerationStatus.SUCCEEDED
+    assert result.video_url == "https://cdn.example/soul.mp4"
+
+
+def test_higgsfield_parse_status_completed_with_images_only():
+    result = parse_status_response(
+        {
+            "status": "completed",
+            "images": [{"url": "https://cdn.example/1.jpg"}, {"url": "https://cdn.example/2.jpg"}],
+        }
+    )
+    assert result.status == VideoGenerationStatus.SUCCEEDED
+    assert result.video_url == "https://cdn.example/2.jpg"
+
+
+def test_higgsfield_parse_status_failed():
+    result = parse_status_response({"status": "failed", "error": "NSFW content detected"})
+    assert result.status == VideoGenerationStatus.FAILED
+    assert result.error == "NSFW content detected"
+
+
+def test_thumbnail_without_token_returns_503(auth_client, monkeypatch):
+    monkeypatch.setattr(video_service, "get_video_provider", lambda kind=None: _FakeProvider())
+    created = auth_client.post("/api/v1/video/generate", json={"prompt": "a golden retriever surfing"}).json()
+
+    resp = auth_client.post(f"/api/v1/video/{created['id']}/thumbnail")
+    assert resp.status_code == 503
+
+
+def test_thumbnail_generates_successfully(auth_client, monkeypatch):
+    monkeypatch.setattr(video_service, "get_video_provider", lambda kind=None: _FakeProvider())
+    created = auth_client.post("/api/v1/video/generate", json={"prompt": "a golden retriever surfing"}).json()
+
+    class _FakeReplicateProvider:
+        def __init__(self, token):
+            pass
+
+        async def submit(self, prompt, model, extra_params):
+            return "thumb-job-1"
+
+        async def poll(self, job_id):
+            return VideoPollResult(status=VideoGenerationStatus.SUCCEEDED, video_url="https://cdn.example/thumb.jpg")
+
+    monkeypatch.setattr(video_service, "settings", type("S", (), {"replicate_api_token": "fake-token"})())
+    monkeypatch.setattr(video_service, "ReplicateProvider", _FakeReplicateProvider)
+
+    resp = auth_client.post(f"/api/v1/video/{created['id']}/thumbnail")
+    assert resp.status_code == 200
+    assert resp.json()["thumbnail_url"] == "https://cdn.example/thumb.jpg"

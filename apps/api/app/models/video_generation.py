@@ -11,6 +11,7 @@ from app.models.base import BaseModel
 
 class VideoProviderKind(StrEnum):
     REPLICATE = "replicate"
+    HIGGSFIELD = "higgsfield"
 
 
 class VideoGenerationStatus(StrEnum):
@@ -42,4 +43,5 @@ class VideoGeneration(BaseModel):
         Enum(VideoGenerationStatus, name="video_generation_status"), default=VideoGenerationStatus.PENDING
     )
     video_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    thumbnail_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     error: Mapped[str | None] = mapped_column(String(2000), nullable=True)

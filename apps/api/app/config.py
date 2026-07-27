@@ -46,9 +46,17 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     default_ai_provider: str = "openai"
 
-    # AI video generation (Replicate — https://replicate.com/collections/text-to-video)
+    # AI video generation
+    default_video_provider: str = "replicate"
+
+    # Replicate — https://replicate.com/collections/text-to-video
     replicate_api_token: str | None = None
     replicate_video_model: str = "minimax/hailuo-2.3"
+
+    # Higgsfield — https://docs.higgsfield.ai (key+secret pair from your dashboard)
+    higgsfield_api_key: str | None = None
+    higgsfield_api_secret: str | None = None
+    higgsfield_model: str = "higgsfield-ai/soul/standard"
 
     # Storage (S3-compatible)
     s3_endpoint_url: str | None = None

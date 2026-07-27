@@ -31,7 +31,7 @@ async def generate_video(
 ) -> VideoGeneration:
     try:
         return await video_service.start_generation(
-            db, user, payload.prompt, payload.model, payload.extra_params
+            db, user, payload.prompt, payload.model, payload.extra_params, payload.provider
         )
     except VideoProviderError as exc:
         raise ServiceUnavailableError(str(exc)) from exc
@@ -81,3 +81,14 @@ def attach_to_post(
     except video_service.VideoNotReadyError as exc:
         raise ConflictError(str(exc)) from exc
     return post
+
+
+@router.post("/{generation_id}/thumbnail", response_model=VideoGenerationRead)
+async def generate_thumbnail(
+    generation_id: UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> VideoGeneration:
+    generation = _get_owned_generation(db, user, generation_id)
+    try:
+        return await video_service.generate_thumbnail(db, generation)
+    except VideoProviderError as exc:
+        raise ServiceUnavailableError(str(exc)) from exc

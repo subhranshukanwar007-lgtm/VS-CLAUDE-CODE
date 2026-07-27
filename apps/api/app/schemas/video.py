@@ -10,13 +10,17 @@ from app.models.video_generation import VideoGenerationStatus, VideoProviderKind
 
 class VideoGenerateRequest(BaseModel):
     prompt: str = Field(min_length=1, max_length=4000)
+    provider: VideoProviderKind | None = Field(default=None, description="Defaults to DEFAULT_VIDEO_PROVIDER")
     model: str | None = Field(
-        default=None, description="Replicate 'owner/name' slug; defaults to REPLICATE_VIDEO_MODEL"
+        default=None,
+        description="Model/model_id for the chosen provider (Replicate 'owner/name' slug, or a Higgsfield "
+        "model_id like 'higgsfield-ai/soul/standard'); defaults to that provider's configured default.",
     )
     extra_params: dict[str, Any] = Field(
         default_factory=dict,
-        description="Passed straight through into the model's input alongside `prompt` "
-        "(e.g. {'image': 'https://...'} for image-to-video, or a model-specific duration/aspect_ratio).",
+        description="Passed straight through alongside `prompt` into the provider's request body "
+        "(e.g. {'image': 'https://...'} for image-to-video, reference face/voice IDs for Higgsfield, "
+        "or a model-specific duration/aspect_ratio).",
     )
 
 
@@ -29,6 +33,7 @@ class VideoGenerationRead(BaseModel):
     prompt: str
     status: VideoGenerationStatus
     video_url: str | None
+    thumbnail_url: str | None
     error: str | None
     post_id: UUID | None
     created_at: datetime

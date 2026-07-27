@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any
 
@@ -11,11 +12,15 @@ from app.models.user import User
 from app.models.video_generation import VideoGeneration, VideoGenerationStatus, VideoProviderKind
 from app.services.notification_service import notify
 from app.services.video.base import VideoProviderError
-from app.services.video.factory import get_video_provider
+from app.services.video.factory import default_model_for, get_video_provider
+from app.services.video.replicate_provider import ReplicateProvider
 
 logger = logging.getLogger("video")
 
 _IN_FLIGHT_STATUSES = (VideoGenerationStatus.PENDING, VideoGenerationStatus.PROCESSING)
+_THUMBNAIL_MODEL = "black-forest-labs/flux-schnell"
+_THUMBNAIL_POLL_ATTEMPTS = 20
+_THUMBNAIL_POLL_DELAY_SECONDS = 1.5
 
 
 class VideoNotReadyError(Exception):
@@ -31,7 +36,7 @@ async def start_generation(
     extra_params: dict[str, Any] | None = None,
     provider_kind: VideoProviderKind | None = None,
 ) -> VideoGeneration:
-    resolved_model = model or settings.replicate_video_model
+    resolved_model = model or default_model_for(provider_kind)
     provider = get_video_provider(provider_kind)
 
     job_id = await provider.submit(prompt, resolved_model, extra_params or {})
@@ -139,3 +144,34 @@ def attach_to_post(
     db.commit()
     db.refresh(post)
     return post
+
+
+async def generate_thumbnail(db: Session, generation: VideoGeneration) -> VideoGeneration:
+    """Generates a thumbnail image for a video generation using a fast
+    Replicate image model, synchronously — flux-schnell typically finishes in
+    a few seconds, so this polls inline rather than going through the async
+    submit-then-poll flow used for video. Requires REPLICATE_API_TOKEN
+    regardless of which provider generated the video itself."""
+
+    if not settings.replicate_api_token:
+        raise VideoProviderError("REPLICATE_API_TOKEN is not configured (required for thumbnail generation)")
+
+    provider = ReplicateProvider(settings.replicate_api_token)
+    job_id = await provider.submit(
+        f"A vibrant, high-contrast, eye-catching social media thumbnail representing: {generation.prompt}",
+        _THUMBNAIL_MODEL,
+        {},
+    )
+
+    for _ in range(_THUMBNAIL_POLL_ATTEMPTS):
+        result = await provider.poll(job_id)
+        if result.status == VideoGenerationStatus.SUCCEEDED:
+            generation.thumbnail_url = result.video_url
+            db.commit()
+            db.refresh(generation)
+            return generation
+        if result.status == VideoGenerationStatus.FAILED:
+            raise VideoProviderError(result.error or "Thumbnail generation failed")
+        await asyncio.sleep(_THUMBNAIL_POLL_DELAY_SECONDS)
+
+    raise VideoProviderError("Thumbnail generation timed out")
