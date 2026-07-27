@@ -12,6 +12,7 @@ from app.models.user import User
 from app.services.followup_service import run_follow_up_automation
 from app.services.notification_service import notify
 from app.services.scheduler_service import publish_due_posts
+from app.services.video_service import poll_all_pending
 
 logger = logging.getLogger("workers")
 
@@ -84,6 +85,18 @@ def run_follow_up_automation_task() -> int:
         count = asyncio.run(run_follow_up_automation(db))
         if count:
             logger.info("triggered %d lead follow-ups", count)
+        return count
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.workers.tasks.poll_video_generations_task")
+def poll_video_generations_task() -> int:
+    db = SessionLocal()
+    try:
+        count = asyncio.run(poll_all_pending(db))
+        if count:
+            logger.info("%d video generation(s) changed status", count)
         return count
     finally:
         db.close()

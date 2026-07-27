@@ -207,6 +207,21 @@ export interface FollowUpResult {
   task: Task;
 }
 
+export type VideoProviderKind = "replicate";
+export type VideoGenerationStatus = "pending" | "processing" | "succeeded" | "failed";
+
+export interface VideoGeneration {
+  id: string;
+  provider: VideoProviderKind;
+  model: string;
+  prompt: string;
+  status: VideoGenerationStatus;
+  video_url: string | null;
+  error: string | null;
+  post_id: string | null;
+  created_at: string;
+}
+
 export const AGENT_IDS = [
   "ceo",
   "marketing",

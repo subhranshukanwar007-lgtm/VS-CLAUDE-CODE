@@ -25,21 +25,43 @@ working default (marks a post published, logs it, no network call).
 Nothing else in the scheduling pipeline (`scheduler_service.py`,
 `workers/tasks.py`, the calendar UI) needs to change.
 
-## AI Video Engine (paste URL, download, scene split, speech/emotion/object
-## detection, virality score, auto-improve)
+## AI Video Engine
 
-**Status:** not built. `apps/video-editor` is a separate, working, purely
-client-side trim/caption/export tool (FFmpeg.wasm) that predates this
-build-out — it is not yet wired into the dashboard as a feature, and it has no
-AI analysis layer (no Whisper transcription, no YOLO object detection, no
-scene-cut detection, no virality scoring).
+This originally covered two different things — **generating** new video from a
+prompt, and **analyzing/editing** video someone already has (paste URL,
+download, scene split, speech/emotion/object detection, virality score,
+auto-improve). Their status now differs:
+
+### Generation — built
+
+`app/services/video/` + `app/services/video_service.py` + the `/video/*` API +
+the AI Video Studio page. Submit a prompt (optionally with a source image for
+image-to-video), poll until it's ready, preview it, attach it to a post. Two
+pluggable providers ship: Replicate (verified against Replicate's own API
+docs) and Higgsfield (verified against Higgsfield's own docs — base URL, auth
+scheme, and the `soul` model line are confirmed real; the exact request
+fields for *training* a persistent avatar on your specific face/photos, and
+for voice cloning specifically, weren't independently confirmed from public
+docs, so those go in via the generic `extra_params` passthrough rather than a
+bespoke UI — fill them in per your own Higgsfield dashboard once you have an
+account, and treat that mapping as unverified until you've confirmed it
+against a real response).
+
+### Download/analyze an existing video — not built
+
+Paste-a-URL download, scene splitting, Whisper transcription, emotion/object
+detection, camera-movement analysis, virality scoring, and "generate a better
+version" of existing footage are all still not built. `apps/video-editor` is
+a separate, working, purely client-side trim/caption/export tool (FFmpeg.wasm)
+that predates this build-out — it is not wired into the dashboard, and it has
+no AI analysis layer.
 
 **Suggested path:** a new `apps/api` module using `ffmpeg-python` for
 scene/shot splitting, `openai-whisper` (or the OpenAI Whisper API) for speech
 recognition, and a hosted object-detection API or a YOLO model server for
 object/camera-movement analysis, with results stored against a new `VideoAsset`
 model. This is real infrastructure work (GPU or a hosted inference API) and
-was out of scope for this pass.
+remains out of scope.
 
 ## Automation Builder / Workflow Builder (visual, drag-and-drop)
 

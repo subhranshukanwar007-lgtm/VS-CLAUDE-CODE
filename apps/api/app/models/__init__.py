@@ -10,6 +10,7 @@ from app.models.post import Post
 from app.models.social_account import SocialAccount
 from app.models.task import Task
 from app.models.user import User
+from app.models.video_generation import VideoGeneration
 
 __all__ = [
     "AIGeneration",
@@ -24,4 +25,5 @@ __all__ = [
     "SocialAccount",
     "Task",
     "User",
+    "VideoGeneration",
 ]

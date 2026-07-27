@@ -35,6 +35,10 @@ celery_app.conf.beat_schedule = {
         "task": "app.workers.tasks.run_follow_up_automation_task",
         "schedule": crontab(hour=9, minute=0),
     },
+    "poll-video-generations": {
+        "task": "app.workers.tasks.poll_video_generations_task",
+        "schedule": 30.0,
+    },
 }
 
 celery_app.autodiscover_tasks(["app.workers"])

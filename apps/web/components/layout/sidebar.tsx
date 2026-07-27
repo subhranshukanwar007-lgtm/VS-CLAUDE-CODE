@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Bot,
   CalendarDays,
+  Clapperboard,
   LayoutDashboard,
   Settings,
   Sparkles,
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/crm", label: "CRM", icon: Users },
   { href: "/calendar", label: "Content Calendar", icon: CalendarDays },
   { href: "/content", label: "AI Content Studio", icon: Sparkles },
+  { href: "/video", label: "AI Video Studio", icon: Clapperboard },
   { href: "/agents", label: "AI Agents", icon: Bot },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

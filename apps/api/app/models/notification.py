@@ -15,6 +15,8 @@ class NotificationType(StrEnum):
     LEAD_CREATED = "lead_created"
     DEAL_WON = "deal_won"
     FOLLOW_UP_SUGGESTED = "follow_up_suggested"
+    VIDEO_READY = "video_ready"
+    VIDEO_FAILED = "video_failed"
     SYSTEM = "system"
 
 
