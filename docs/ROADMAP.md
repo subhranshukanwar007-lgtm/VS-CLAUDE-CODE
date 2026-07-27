@@ -43,9 +43,12 @@ was out of scope for this pass.
 
 ## Automation Builder / Workflow Builder (visual, drag-and-drop)
 
-**Status:** not built. The scheduler and Celery beat give you cron-style
-automation (see `celery_app.py`'s `beat_schedule`) but there's no visual
-builder or arbitrary trigger→action graph.
+**Status:** not built as a general visual builder. What exists is one concrete,
+hardcoded automation of this shape — CRM lead follow-up (`services/followup_service.py`,
+wired into `celery_app.py`'s `beat_schedule` as `lead-follow-up-automation`):
+detect a condition (lead inactive for N days), draft with AI, and act (create a
+task + notify). It's a real trigger→condition→action pipeline, just not a
+generic or user-configurable one yet.
 
 **Suggested path:** a `Workflow` model (trigger type, condition, action) plus
 a Celery task that evaluates workflows on relevant events (lead created, post

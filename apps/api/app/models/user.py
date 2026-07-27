@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from sqlalchemy import Boolean, Enum, String
+from sqlalchemy import Boolean, Enum, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
@@ -24,6 +24,7 @@ class User(BaseModel):
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
     avatar_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     brand_voice: Mapped[str | None] = mapped_column(String(4000), nullable=True)
+    follow_up_days: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
 
     leads: Mapped[list["Lead"]] = relationship(back_populates="owner", cascade="all, delete-orphan")  # noqa: F821
     tasks: Mapped[list["Task"]] = relationship(back_populates="assignee", cascade="all, delete-orphan")  # noqa: F821

@@ -1,8 +1,11 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.lead import LeadSource, LeadStatus
+from app.schemas.ai import AIGenerationResult
+from app.schemas.task import TaskRead
 
 
 class LeadCreate(BaseModel):
@@ -43,3 +46,10 @@ class LeadRead(BaseModel):
     status: LeadStatus
     estimated_value: float | None
     tags: str | None
+    last_follow_up_at: datetime | None = None
+    is_stale: bool = False
+
+
+class FollowUpResult(BaseModel):
+    generation: AIGenerationResult
+    task: TaskRead

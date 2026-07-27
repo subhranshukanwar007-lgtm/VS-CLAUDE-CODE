@@ -8,6 +8,7 @@ export interface User {
   is_active: boolean;
   avatar_url: string | null;
   brand_voice: string | null;
+  follow_up_days: number;
 }
 
 export interface TokenPair {
@@ -48,6 +49,8 @@ export interface Lead {
   status: LeadStatus;
   estimated_value: number | null;
   tags: string | null;
+  last_follow_up_at: string | null;
+  is_stale: boolean;
 }
 
 export interface PipelineStage {
@@ -197,6 +200,11 @@ export interface AIGenerationResult {
   provider: AIProviderKind;
   model: string;
   result: string;
+}
+
+export interface FollowUpResult {
+  generation: AIGenerationResult;
+  task: Task;
 }
 
 export const AGENT_IDS = [

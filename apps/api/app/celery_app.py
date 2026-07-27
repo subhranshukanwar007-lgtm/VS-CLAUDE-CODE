@@ -31,6 +31,10 @@ celery_app.conf.beat_schedule = {
         "task": "app.workers.tasks.send_monthly_summaries_task",
         "schedule": crontab(hour=8, minute=0, day_of_month=1),
     },
+    "lead-follow-up-automation": {
+        "task": "app.workers.tasks.run_follow_up_automation_task",
+        "schedule": crontab(hour=9, minute=0),
+    },
 }
 
 celery_app.autodiscover_tasks(["app.workers"])

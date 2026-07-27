@@ -1,7 +1,8 @@
 import uuid
+from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import Enum, ForeignKey, Numeric, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,6 +46,7 @@ class Lead(BaseModel):
     status: Mapped[LeadStatus] = mapped_column(Enum(LeadStatus, name="lead_status"), default=LeadStatus.LEAD)
     estimated_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    last_follow_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     owner: Mapped["User"] = relationship(back_populates="leads")  # noqa: F821
     stage: Mapped["PipelineStage | None"] = relationship(back_populates="leads")  # noqa: F821

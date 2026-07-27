@@ -9,6 +9,7 @@ from app.database import SessionLocal
 from app.models.notification import NotificationType
 from app.models.post import Post, PostStatus
 from app.models.user import User
+from app.services.followup_service import run_follow_up_automation
 from app.services.notification_service import notify
 from app.services.scheduler_service import publish_due_posts
 
@@ -74,3 +75,15 @@ def send_weekly_summaries_task() -> int:
 def send_monthly_summaries_task() -> int:
     since = datetime.now(timezone.utc) - timedelta(days=30)
     return _send_summaries("monthly", since, NotificationType.SYSTEM)
+
+
+@celery_app.task(name="app.workers.tasks.run_follow_up_automation_task")
+def run_follow_up_automation_task() -> int:
+    db = SessionLocal()
+    try:
+        count = asyncio.run(run_follow_up_automation(db))
+        if count:
+            logger.info("triggered %d lead follow-ups", count)
+        return count
+    finally:
+        db.close()

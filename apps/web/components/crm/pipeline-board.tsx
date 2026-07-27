@@ -103,7 +103,15 @@ export function PipelineBoard({ stages, leads, onStagesChange, onLeadsChange }: 
                   className="cursor-grab active:cursor-grabbing"
                 >
                   <CardHeader className="p-3 pb-1">
-                    <CardTitle className="text-sm font-medium text-foreground">{lead.full_name}</CardTitle>
+                    <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                      {lead.full_name}
+                      {lead.is_stale && (
+                        <span
+                          title="Needs follow-up"
+                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning"
+                        />
+                      )}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="flex items-center justify-between p-3 pt-0">
                     <Badge variant="outline">{lead.source}</Badge>

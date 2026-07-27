@@ -13,6 +13,7 @@ class AIGenerationKind(StrEnum):
     HASHTAGS = "hashtags"
     SCRIPT = "script"
     AGENT_CHAT = "agent_chat"
+    FOLLOW_UP = "follow_up"
 
 
 class AIProvider(StrEnum):

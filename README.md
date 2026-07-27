@@ -52,8 +52,15 @@ tracked in the roadmap.
   revenue trends, top/worst posts by engagement, and a transparent linear-
   regression 30-day growth projection (labeled as exactly that — not "AI
   predictions")
-- **Notifications**: in-app notifications created on lead/deal/post events and
-  daily/weekly/monthly summaries
+- **CRM follow-up automation**: a daily Celery beat job flags leads with no
+  notes/tasks/status changes in a user-configurable window (`User.follow_up_days`,
+  default 5, 0 disables it), drafts an AI follow-up message grounded in the
+  lead's details, creates a reminder task, and notifies the owner —
+  self-resets each run so the same lead isn't re-flagged until the window
+  passes again after the last follow-up. Also available on demand via
+  `POST /leads/{id}/follow-up` (a "suggest follow-up" button in the CRM UI)
+- **Notifications**: in-app notifications created on lead/deal/post/follow-up
+  events and daily/weekly/monthly summaries
 - **Security**: rate limiting (slowapi), an audit log middleware, Pydantic
   validation everywhere, bcrypt password hashing
 
@@ -62,16 +69,17 @@ tracked in the roadmap.
 - Auth pages, protected dashboard shell (sidebar + topbar + notification bell)
 - Dashboard with live stat cards, Recharts trend charts, top/worst posts,
   growth projections, CRM snapshot
-- CRM: leads table + drag-and-drop Kanban pipeline board
+- CRM: leads table + drag-and-drop Kanban pipeline board, with a stale-lead
+  indicator and a one-click "suggest follow-up" action
 - Content calendar: scheduling form + status-tracked post list
 - AI Content Studio: caption/hashtag/script generators with provider choice
 - AI Agents: chat UI for all 12 agents
-- Settings: profile + brand voice (used automatically by the generators)
+- Settings: profile + brand voice + follow-up automation window
 
 Verified end-to-end in a real browser against the live backend (registration,
-CRM, calendar, agents, settings) with zero console errors. `tsc`, `eslint`,
-and `next build` all pass; 26 backend pytest tests pass against a real
-Postgres database; ruff is clean.
+CRM, calendar, agents, settings, follow-up automation) with zero console
+errors. `tsc`, `eslint`, and `next build` all pass; 34 backend pytest tests
+pass against a real Postgres database; ruff is clean.
 
 ## Quickstart
 

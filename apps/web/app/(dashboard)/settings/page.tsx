@@ -17,13 +17,18 @@ export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const [fullName, setFullName] = useState(user?.full_name ?? "");
   const [brandVoice, setBrandVoice] = useState(user?.brand_voice ?? "");
+  const [followUpDays, setFollowUpDays] = useState(user?.follow_up_days ?? 5);
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.patch<User>("/users/me", { full_name: fullName, brand_voice: brandVoice || undefined });
+      await api.patch<User>("/users/me", {
+        full_name: fullName,
+        brand_voice: brandVoice || undefined,
+        follow_up_days: followUpDays,
+      });
       await refreshUser();
       toast.success("Settings saved");
     } catch (err) {
@@ -39,7 +44,7 @@ export default function SettingsPage() {
     <div className="flex max-w-2xl flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage your profile and brand voice</p>
+        <p className="text-sm text-muted-foreground">Manage your profile, brand voice, and automation</p>
       </div>
 
       <Card>
@@ -67,6 +72,27 @@ export default function SettingsPage() {
               />
               <p className="text-xs text-muted-foreground">
                 Used automatically by the caption and script generators when you don&apos;t override it per request.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="followUpDays">Lead follow-up automation</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="followUpDays"
+                  type="number"
+                  min={0}
+                  max={90}
+                  className="w-24"
+                  value={followUpDays}
+                  onChange={(e) => setFollowUpDays(Number(e.target.value))}
+                />
+                <span className="text-sm text-muted-foreground">
+                  days of inactivity before a lead is flagged for follow-up
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Every day, leads with no notes, tasks, or status changes for this long get an AI-drafted follow-up
+                message and a reminder task automatically. Set to 0 to disable.
               </p>
             </div>
             <Button type="submit" disabled={saving} className="w-fit">
