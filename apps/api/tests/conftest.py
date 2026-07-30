@@ -39,6 +39,18 @@ def client():
     return TestClient(app)
 
 
+def _register_and_login(email: str, full_name: str) -> TestClient:
+    api = TestClient(app)
+    api.post(
+        "/api/v1/auth/register",
+        json={"email": email, "full_name": full_name, "password": "supersecret123"},
+    )
+    resp = api.post("/api/v1/auth/login", json={"email": email, "password": "supersecret123"})
+    token = resp.json()["tokens"]["access_token"]
+    api.headers.update({"Authorization": f"Bearer {token}"})
+    return api
+
+
 @pytest.fixture
 def auth_client(client):
     client.post(
@@ -49,3 +61,10 @@ def auth_client(client):
     token = resp.json()["tokens"]["access_token"]
     client.headers.update({"Authorization": f"Bearer {token}"})
     return client
+
+
+@pytest.fixture
+def second_auth_client():
+    """A separate authenticated user, for asserting per-user isolation."""
+
+    return _register_and_login("second@example.com", "Second User")

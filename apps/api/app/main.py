@@ -37,7 +37,19 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse
 
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+    """Pydantic v2 puts the original exception object in `ctx` when a field
+    validator raises ValueError, and that object is not JSON serializable — passing
+    exc.errors() straight to JSONResponse turns a 422 into a 500. Stringify ctx
+    values so custom validators surface their message properly."""
+
+    detail = []
+    for error in exc.errors():
+        cleaned = {k: v for k, v in error.items() if k != "ctx"}
+        cleaned["loc"] = [str(part) for part in error.get("loc", ())]
+        if "ctx" in error and isinstance(error["ctx"], dict):
+            cleaned["ctx"] = {k: str(v) for k, v in error["ctx"].items()}
+        detail.append(cleaned)
+    return JSONResponse(status_code=422, content={"detail": detail})
 
 
 @app.get("/health", tags=["health"])

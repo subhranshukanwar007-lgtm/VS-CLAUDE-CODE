@@ -5,12 +5,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.exceptions import BadRequestError, ConflictError, ForbiddenError, NotFoundError
 from app.database import get_db
 from app.deps import get_current_user
 from app.models.post import Post, PostStatus
 from app.models.user import User, UserRole
 from app.schemas.post import PostCreate, PostRead, PostUpdate
+from app.services.scheduler_service import publish_post
 
 router = APIRouter(prefix="/posts", tags=["content-calendar"])
 
@@ -85,4 +86,28 @@ def schedule_post(
     post.status = PostStatus.SCHEDULED
     db.commit()
     db.refresh(post)
+    return post
+
+
+@router.post("/{post_id}/publish", response_model=PostRead)
+async def publish_now(
+    post_id: UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> Post:
+    """Approve and publish a post immediately — the "Publish now" button on a draft.
+
+    This is the human approval step: with auto-publish off, a due post drops back
+    to DRAFT and waits for this call. Publishing runs through the same code path
+    the scheduler uses, so approval and automation can never diverge in behaviour.
+    """
+
+    post = _get_owned_post(db, user, post_id)
+    if post.status == PostStatus.PUBLISHED:
+        raise ConflictError("This post is already published.")
+    if post.status == PostStatus.PUBLISHING:
+        raise ConflictError("This post is already being published.")
+
+    await publish_post(db, post)
+    db.refresh(post)
+    if post.status == PostStatus.FAILED:
+        raise BadRequestError(post.failure_reason or "Publishing failed.")
     return post

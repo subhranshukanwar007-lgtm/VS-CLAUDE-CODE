@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     ai,
     auth,
+    automation,
     dashboard,
     deals,
     leads,
@@ -31,4 +32,5 @@ api_router.include_router(dashboard.router)
 api_router.include_router(ai.router)
 api_router.include_router(video.router)
 api_router.include_router(social_accounts.router)
+api_router.include_router(automation.router)
 api_router.include_router(webhooks.router)

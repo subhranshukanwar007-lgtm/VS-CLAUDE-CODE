@@ -18,6 +18,7 @@ class LeadCreate(BaseModel):
     stage_id: UUID | None = None
     estimated_value: float | None = None
     tags: str | None = None
+    country: str | None = Field(default=None, min_length=2, max_length=2)
 
 
 class LeadUpdate(BaseModel):
@@ -30,6 +31,7 @@ class LeadUpdate(BaseModel):
     stage_id: UUID | None = None
     estimated_value: float | None = None
     tags: str | None = None
+    country: str | None = Field(default=None, min_length=2, max_length=2)
 
 
 class LeadRead(BaseModel):
@@ -46,6 +48,7 @@ class LeadRead(BaseModel):
     status: LeadStatus
     estimated_value: float | None
     tags: str | None
+    country: str | None
     last_follow_up_at: datetime | None = None
     is_stale: bool = False
 

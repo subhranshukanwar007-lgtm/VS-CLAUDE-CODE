@@ -52,9 +52,20 @@ class CrmSummary(BaseModel):
     won_value: float
 
 
+class LeadBreakdown(BaseModel):
+    """Lead counts grouped by one dimension — which platform they came from, or
+    which country they're in. `label` is None for leads with that field unset
+    (e.g. a lead whose country was never recorded)."""
+
+    label: str | None
+    count: int
+
+
 class DashboardOverview(BaseModel):
     summary: DashboardSummary
     top_posts: list[TopPost]
     worst_posts: list[TopPost]
     predictions: list[GrowthPrediction]
     crm: CrmSummary
+    leads_by_source: list[LeadBreakdown]
+    leads_by_country: list[LeadBreakdown]

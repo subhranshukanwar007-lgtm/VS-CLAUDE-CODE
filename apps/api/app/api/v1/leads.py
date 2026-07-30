@@ -1,13 +1,13 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ForbiddenError, NotFoundError, ServiceUnavailableError
 from app.database import get_db
 from app.deps import get_current_user
-from app.models.lead import Lead
+from app.models.lead import Lead, LeadSource
 from app.models.notification import NotificationType
 from app.models.user import User, UserRole
 from app.schemas.ai import AIGenerationResult
@@ -43,8 +43,18 @@ def _to_read(db: Session, lead: Lead) -> LeadRead:
 
 
 @router.get("", response_model=list[LeadRead])
-def list_leads(db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> list[LeadRead]:
-    leads = db.scalars(_visible_query(user).order_by(Lead.created_at.desc())).all()
+def list_leads(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    country: str | None = Query(default=None, min_length=2, max_length=2, description="ISO alpha-2, e.g. US"),
+    source: LeadSource | None = None,
+) -> list[LeadRead]:
+    query = _visible_query(user)
+    if country is not None:
+        query = query.where(Lead.country == country.upper())
+    if source is not None:
+        query = query.where(Lead.source == source)
+    leads = db.scalars(query.order_by(Lead.created_at.desc())).all()
     return [_to_read(db, lead) for lead in leads]
 
 

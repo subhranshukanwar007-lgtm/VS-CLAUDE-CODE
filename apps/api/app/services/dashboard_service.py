@@ -13,6 +13,7 @@ from app.schemas.dashboard import (
     DashboardOverview,
     DashboardSummary,
     GrowthPrediction,
+    LeadBreakdown,
     MetricPoint,
     TopPost,
 )
@@ -117,6 +118,22 @@ def _top_posts(db: Session, user_id, since: date, limit: int, ascending: bool) -
     ]
 
 
+def _lead_breakdown(db: Session, user_id, column) -> list[LeadBreakdown]:
+    """Group this user's leads by `column`, biggest group first. Used for the
+    "where are my leads coming from" and "which countries" panels."""
+
+    rows = db.execute(
+        select(column, func.count())
+        .where(Lead.owner_id == user_id)
+        .group_by(column)
+        .order_by(func.count().desc())
+    ).all()
+    return [
+        LeadBreakdown(label=row[0].value if hasattr(row[0], "value") else row[0], count=int(row[1]))
+        for row in rows
+    ]
+
+
 def get_dashboard_overview(db: Session, user: User, window_days: int = 30) -> DashboardOverview:
     since = date.today() - timedelta(days=window_days)
 
@@ -193,4 +210,6 @@ def get_dashboard_overview(db: Session, user: User, window_days: int = 30) -> Da
             pipeline_value=pipeline_value,
             won_value=won_value,
         ),
+        leads_by_source=_lead_breakdown(db, user.id, Lead.source),
+        leads_by_country=_lead_breakdown(db, user.id, Lead.country),
     )

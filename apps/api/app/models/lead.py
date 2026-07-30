@@ -49,6 +49,16 @@ class Lead(BaseModel):
     status: Mapped[LeadStatus] = mapped_column(Enum(LeadStatus, name="lead_status"), default=LeadStatus.LEAD)
     estimated_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    country: Mapped[str | None] = mapped_column(
+        String(2),
+        nullable=True,
+        index=True,
+        comment=(
+            "ISO 3166-1 alpha-2, e.g. 'US', 'IN', 'GB'. Set manually or from ad "
+            "targeting: Meta's comment webhook does not include the commenter's "
+            "country, so this is never auto-detected from engagement."
+        ),
+    )
     last_follow_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     external_platform_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, comment="Commenter/sender ID from the source platform, for dedupe on repeat engagement"
