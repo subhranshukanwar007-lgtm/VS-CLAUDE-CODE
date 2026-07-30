@@ -26,7 +26,7 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       await register(fullName, email, password);
-      router.push("/dashboard");
+      router.push("/home");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not create account");
     } finally {

@@ -8,29 +8,57 @@ This document is the honest accounting of what's built (see the root
 [`README.md`](../README.md)) versus what's deliberately left as a next step,
 and where each one plugs into the existing architecture.
 
-## Social platform integrations (Instagram, Facebook, YouTube, LinkedIn,
-## Threads, Pinterest, TikTok, X, WhatsApp)
+## Social platform integrations
 
-**Status:** outbound publishing is not implemented (scheduling engine is real
-and tested; `app/integrations/log_publisher.py` is the working default —
-marks a post published, logs it, no network call). **Inbound comment capture
-is implemented** for Instagram/Facebook: register your business account's ID
-(Settings → Connected accounts, or `POST /social-accounts`) and configure a
-Meta webhook pointing at `/api/v1/webhooks/meta` (see `.env.example` for the
-setup steps) — comments on your posts get verified via Meta's real
-X-Hub-Signature-256 HMAC scheme and turned into CRM leads automatically
-(`app/services/engagement_service.py`), deduped per commenter so repeat
-engagement adds a note instead of a duplicate lead. This can't be tested
-fully end-to-end without a real Meta Developer App and a public HTTPS URL for
-the callback, which this repo can't provide on its own.
+**Status: outbound publishing is now real for Instagram, Facebook and Threads**
+(`app/integrations/meta_publisher.py`), all three through one Meta developer app.
+Instagram uses the two-step container flow and polls container status for video
+because transcoding is asynchronous; Facebook covers feed/photos/videos plus the
+separate Page Stories endpoints; Threads uses `graph.threads.net` and enforces
+its 500-character cap. Tokens are encrypted at rest with Fernet
+(`app/core/token_crypto.py`).
 
-**To add outbound publishing for a platform:**
-1. Implement OAuth connect flow, storing tokens on `SocialAccount`
-   (`app/models/social_account.py` already has the fields — the current
-   `/social-accounts` API only sets `handle`/`external_account_id` today, not
-   tokens; a real OAuth flow would populate those too).
+Publishing is gated behind a per-platform auto-publish toggle that **defaults to
+off**: a due post drops back to DRAFT and notifies its owner rather than posting
+unattended, and `POST /posts/{id}/publish` is the approve action. That default is
+deliberate — a new account posting AI video unattended every day is how accounts
+get restricted.
+
+**Still on `LogPublisher`** (marks published, no network call): YouTube, LinkedIn,
+Pinterest, TikTok, X.
+
+**X / Twitter is a deliberate omission, not an oversight.** X removed its free
+API tier for new developers on 2026-02-06; posting is now pay-per-use at roughly
+$0.015 per post and $0.20 for a post containing a link. The `Publisher` interface
+makes adding it a single file whenever that cost is acceptable.
+
+**Inbound comment capture** is implemented for Instagram/Facebook: register your
+business account's ID (Settings → Connected accounts) and configure a Meta
+webhook at `/api/v1/webhooks/meta`. Comments are verified with Meta's real
+X-Hub-Signature-256 HMAC and become CRM leads, deduped per commenter. This can't
+be exercised end to end without a real Meta app and a public HTTPS callback URL.
+
+**What each platform's API genuinely allows**, since these limits shaped the
+design rather than being incidental:
+
+| Platform | Publish | Stories | DMs | Keyword search |
+| --- | --- | --- | --- | --- |
+| Instagram | yes | yes (`media_type=STORIES`) | yes — private replies to comments: 7-day window, one reply per comment ever | no |
+| Facebook | yes | yes (`/photo_stories`, `/video_stories`) | yes | no |
+| Threads | yes | **no — Threads has no Stories** | **no — Threads has no DM API at all** | yes (`/keyword_search`) |
+| Reddit | n/a | n/a | n/a | free read; **writing needs manual approval**, self-serve signup closed, 2-4 week wait, free tier non-commercial |
+| Quora | n/a | n/a | n/a | **no public API has ever existed** |
+
+`GET /automation/capabilities` exposes the publish/Stories columns so the UI can
+grey out what it can't actually do instead of offering a toggle that silently
+does nothing.
+
+**To add outbound publishing for another platform:**
+1. Implement its OAuth connect flow, storing tokens on `SocialAccount` via
+   `encrypt_token` (the model has the fields; `/social-accounts` currently only
+   sets `handle`/`external_account_id`).
 2. Subclass `Publisher` (`app/integrations/base.py`) using that platform's
-   official API to actually post.
+   official API.
 3. Register it in `app/integrations/registry.py`.
 
 Nothing else in the scheduling pipeline (`scheduler_service.py`,
@@ -76,17 +104,23 @@ remains out of scope.
 
 ## Automation Builder / Workflow Builder (visual, drag-and-drop)
 
-**Status:** not built as a general visual builder. What exists is one concrete,
-hardcoded automation of this shape — CRM lead follow-up (`services/followup_service.py`,
-wired into `celery_app.py`'s `beat_schedule` as `lead-follow-up-automation`):
-detect a condition (lead inactive for N days), draft with AI, and act (create a
-task + notify). It's a real trigger→condition→action pipeline, just not a
-generic or user-configurable one yet.
+**Status:** not built as a general visual builder. What exists is three concrete
+trigger→condition→action automations, each real and running on Celery beat:
 
-**Suggested path:** a `Workflow` model (trigger type, condition, action) plus
-a Celery task that evaluates workflows on relevant events (lead created, post
-published, etc. — the `notify()` call sites in `app/api/v1/` are exactly where
-you'd also fire workflow evaluation).
+- **Lead follow-up** (`services/followup_service.py`) — lead inactive for N days
+  → AI drafts a message → creates a task + notifies.
+- **Buying-intent scoring** (`services/intent_service.py`) — new engagement →
+  score the lead's own words → notify on the transition into HOT.
+- **Publish or hold** (`services/scheduler_service.py`) — post due → publish if
+  auto-publish is on for that platform, otherwise return it to DRAFT and ask.
+
+They're user-configurable through `AutomationSetting` (Settings UI: keywords,
+templates, per-platform toggles, cadence, reply language) but not yet composable
+into arbitrary new workflows.
+
+**Suggested path:** a `Workflow` model (trigger type, condition, action) plus a
+Celery task evaluating workflows on relevant events — the `notify()` call sites
+in `app/api/v1/` are exactly where you'd also fire workflow evaluation.
 
 ## Email marketing, WhatsApp integration, calendar meeting booking
 
@@ -102,12 +136,25 @@ OAuth scopes beyond the sign-in scope currently used, plus a
 
 ## Competitor tracking, trend tracking, audience insights
 
-**Status:** not built as scraping/tracking infrastructure. The **Trend Agent**
-and **Research Agent** (`app/services/agents/personas.py`) exist and will
-reason about trends/competitors if you describe them in the chat — they don't
-independently scrape or monitor anything yet. Real tracking needs either
-platform APIs with the right scopes or a scraping pipeline, both of which
-carry ToS/legal considerations worth a deliberate decision, not a default.
+**Status:** not built. The Trend and Research personas were removed in the agent
+trim (twelve down to six) precisely because they implied monitoring the app
+doesn't do — an agent that can only reason about trends you describe to it is
+worse than no agent, because it looks like tracking.
+
+Real tracking needs either platform APIs with the right scopes or a scraping
+pipeline. The one genuinely open door is **Threads `/keyword_search`**, which is
+free and permits finding public posts by keyword; a "Questions Inbox" built on it
+(find people asking questions in your niche, AI-draft a public reply, you
+approve) is modelled in `app/models/question_opportunity.py` but the search job
+and UI are not built yet. Reddit search would slot into the same model, though
+posting replies there needs Reddit's manual OAuth approval.
+
+## Lead geography
+
+**Status:** `Lead.country` exists with CRM filtering and Command Center
+breakdowns. It is set manually or from ad targeting and is deliberately **never
+inferred** — Meta's comment webhook does not include the commenter's country, and
+guessing it from a name or language would be worse than leaving it blank.
 
 ## Revenue dashboard, sales funnel, conversion analytics beyond what's shown
 

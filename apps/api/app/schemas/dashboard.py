@@ -1,8 +1,9 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
-from app.models.post import Platform
+from app.models.lead import LeadIntent
+from app.models.post import Platform, PostFormat, PostStatus
 
 
 class MetricPoint(BaseModel):
@@ -69,3 +70,58 @@ class DashboardOverview(BaseModel):
     crm: CrmSummary
     leads_by_source: list[LeadBreakdown]
     leads_by_country: list[LeadBreakdown]
+
+
+class HotLead(BaseModel):
+    """A lead worth a conversation right now."""
+
+    lead_id: str
+    full_name: str
+    source: str
+    country: str | None
+    intent: LeadIntent
+    intent_reason: str | None
+    scored_at: datetime | None
+
+
+class PendingPost(BaseModel):
+    """A post waiting on the user: either a draft to approve, or one scheduled and
+    coming up. `is_overdue` marks a post whose scheduled time has already passed
+    while auto-publish was off — those are the ones actually blocking."""
+
+    post_id: str
+    platform: Platform
+    format: PostFormat
+    caption: str | None
+    status: PostStatus
+    scheduled_at: datetime | None
+    is_overdue: bool
+    can_publish: bool
+
+
+class MoneySnapshot(BaseModel):
+    revenue_30d: float
+    won_deals: int
+    won_value: float
+    open_deals: int
+    open_pipeline_value: float
+
+
+class CommandCenter(BaseModel):
+    """Everything needing attention, on one screen.
+
+    This exists because the same information was spread across six pages, so
+    nobody could see the loop running. Every list here is either something to act
+    on or a number that answers "is this working".
+    """
+
+    hot_leads: list[HotLead]
+    needs_approval: list[PendingPost]
+    upcoming: list[PendingPost]
+    money: MoneySnapshot
+    followers: float
+    views_30d: float
+    unread_notifications: int
+    leads_by_source: list[LeadBreakdown]
+    leads_by_country: list[LeadBreakdown]
+    auto_publish: dict[str, bool]

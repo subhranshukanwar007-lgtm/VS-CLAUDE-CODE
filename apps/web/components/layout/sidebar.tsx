@@ -6,6 +6,7 @@ import {
   Bot,
   CalendarDays,
   Clapperboard,
+  Gauge,
   LayoutDashboard,
   Settings,
   Sparkles,
@@ -15,7 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/home", label: "Command Center", icon: Gauge },
+  { href: "/dashboard", label: "Analytics", icon: LayoutDashboard },
   { href: "/crm", label: "CRM", icon: Users },
   { href: "/calendar", label: "Content Calendar", icon: CalendarDays },
   { href: "/content", label: "AI Content Studio", icon: Sparkles },
@@ -29,7 +31,7 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col gap-6 border-r border-border/60 bg-card/40 p-4 md:flex">
-      <Link href="/dashboard" className="flex items-center gap-2 px-2 py-1">
+      <Link href="/home" className="flex items-center gap-2 px-2 py-1">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-primary-foreground">
           <Sparkles className="h-4 w-4" />
         </div>

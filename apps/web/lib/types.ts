@@ -37,6 +37,8 @@ export type LeadSource =
 
 export type LeadStatus = "lead" | "prospect" | "customer" | "churned";
 
+export type LeadIntent = "unknown" | "cold" | "warm" | "hot";
+
 export interface Lead {
   id: string;
   owner_id: string;
@@ -49,6 +51,10 @@ export interface Lead {
   status: LeadStatus;
   estimated_value: number | null;
   tags: string | null;
+  country: string | null;
+  intent: LeadIntent;
+  intent_reason: string | null;
+  intent_scored_at: string | null;
   last_follow_up_at: string | null;
   is_stale: boolean;
 }
@@ -193,12 +199,83 @@ export interface CrmSummary {
   won_value: number;
 }
 
+export interface LeadBreakdown {
+  label: string | null;
+  count: number;
+}
+
 export interface DashboardOverview {
   summary: DashboardSummary;
   top_posts: TopPost[];
   worst_posts: TopPost[];
   predictions: GrowthPrediction[];
   crm: CrmSummary;
+  leads_by_source: LeadBreakdown[];
+  leads_by_country: LeadBreakdown[];
+}
+
+export interface HotLead {
+  lead_id: string;
+  full_name: string;
+  source: string;
+  country: string | null;
+  intent: LeadIntent;
+  intent_reason: string | null;
+  scored_at: string | null;
+}
+
+export interface PendingPost {
+  post_id: string;
+  platform: Platform;
+  format: PostFormat;
+  caption: string | null;
+  status: PostStatus;
+  scheduled_at: string | null;
+  is_overdue: boolean;
+  can_publish: boolean;
+}
+
+export interface MoneySnapshot {
+  revenue_30d: number;
+  won_deals: number;
+  won_value: number;
+  open_deals: number;
+  open_pipeline_value: number;
+}
+
+export interface CommandCenter {
+  hot_leads: HotLead[];
+  needs_approval: PendingPost[];
+  upcoming: PendingPost[];
+  money: MoneySnapshot;
+  followers: number;
+  views_30d: number;
+  unread_notifications: number;
+  leads_by_source: LeadBreakdown[];
+  leads_by_country: LeadBreakdown[];
+  auto_publish: Record<string, boolean>;
+}
+
+export interface AutomationSetting {
+  id: string;
+  owner_id: string;
+  auto_publish: Record<string, boolean>;
+  dm_enabled: boolean;
+  dm_trigger_keywords: string | null;
+  dm_template: string;
+  dm_link: string | null;
+  threads_monitor_enabled: boolean;
+  threads_keywords: string | null;
+  threads_max_per_day: number;
+  posts_per_day: number;
+  reply_language: "english" | "hinglish" | "hindi";
+}
+
+export interface PlatformCapability {
+  platform: Platform;
+  can_publish: boolean;
+  supports_stories: boolean;
+  note: string | null;
 }
 
 export type AIProviderKind = "openai" | "anthropic" | "gemini";

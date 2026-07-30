@@ -1,22 +1,29 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from app.integrations.registry import has_real_publisher
 from app.models.deal import Deal, DealStatus
-from app.models.lead import Lead
+from app.models.lead import Lead, LeadIntent
 from app.models.metric import Metric, MetricKind
-from app.models.post import Post
+from app.models.notification import Notification
+from app.models.post import Post, PostStatus
 from app.models.user import User
 from app.schemas.dashboard import (
+    CommandCenter,
     CrmSummary,
     DashboardOverview,
     DashboardSummary,
     GrowthPrediction,
+    HotLead,
     LeadBreakdown,
     MetricPoint,
+    MoneySnapshot,
+    PendingPost,
     TopPost,
 )
+from app.services.automation_settings_service import get_or_create
 
 _SUM_KINDS = {
     MetricKind.VIEWS,
@@ -132,6 +139,107 @@ def _lead_breakdown(db: Session, user_id, column) -> list[LeadBreakdown]:
         LeadBreakdown(label=row[0].value if hasattr(row[0], "value") else row[0], count=int(row[1]))
         for row in rows
     ]
+
+
+def get_command_center(db: Session, user: User, window_days: int = 30) -> CommandCenter:
+    """One screen showing the whole loop: who to talk to, what to approve, what's
+    coming, and whether it's making money."""
+
+    since = date.today() - timedelta(days=window_days)
+    now = datetime.now(timezone.utc)
+
+    hot_leads = [
+        HotLead(
+            lead_id=str(lead.id),
+            full_name=lead.full_name,
+            source=lead.source.value,
+            country=lead.country,
+            intent=lead.intent,
+            intent_reason=lead.intent_reason,
+            scored_at=lead.intent_scored_at,
+        )
+        for lead in db.scalars(
+            select(Lead)
+            .where(Lead.owner_id == user.id, Lead.intent.in_((LeadIntent.HOT, LeadIntent.WARM)))
+            # Hot before warm, then most recently scored first.
+            .order_by(
+                case((Lead.intent == LeadIntent.HOT, 0), else_=1),
+                Lead.intent_scored_at.desc().nulls_last(),
+            )
+            .limit(10)
+        )
+    ]
+
+    setting = get_or_create(db, user.id)
+    auto_publish = setting.auto_publish or {}
+
+    def _to_pending(post: Post) -> PendingPost:
+        scheduled = post.scheduled_at
+        return PendingPost(
+            post_id=str(post.id),
+            platform=post.platform,
+            format=post.format,
+            caption=post.caption,
+            status=post.status,
+            scheduled_at=scheduled,
+            is_overdue=bool(scheduled and scheduled <= now),
+            # Surfaced so the UI can warn instead of offering a button that would
+            # only log the post rather than actually publish it.
+            can_publish=has_real_publisher(post.platform),
+        )
+
+    drafts = db.scalars(
+        select(Post)
+        .where(Post.author_id == user.id, Post.status == PostStatus.DRAFT)
+        .order_by(Post.scheduled_at.asc().nulls_last(), Post.created_at.desc())
+        .limit(10)
+    ).all()
+
+    upcoming = db.scalars(
+        select(Post)
+        .where(Post.author_id == user.id, Post.status == PostStatus.SCHEDULED)
+        .order_by(Post.scheduled_at.asc().nulls_last())
+        .limit(10)
+    ).all()
+
+    def _deal_agg(status: DealStatus) -> tuple[int, float]:
+        row = db.execute(
+            select(func.count(), func.coalesce(func.sum(Deal.value), 0))
+            .join(Lead, Deal.lead_id == Lead.id)
+            .where(Lead.owner_id == user.id, Deal.status == status)
+        ).one()
+        return int(row[0]), float(row[1])
+
+    won_count, won_value = _deal_agg(DealStatus.WON)
+    open_count, open_value = _deal_agg(DealStatus.OPEN)
+
+    unread = int(
+        db.scalar(
+            select(func.count())
+            .select_from(Notification)
+            .where(Notification.user_id == user.id, Notification.is_read.is_(False))
+        )
+        or 0
+    )
+
+    return CommandCenter(
+        hot_leads=hot_leads,
+        needs_approval=[_to_pending(post) for post in drafts],
+        upcoming=[_to_pending(post) for post in upcoming],
+        money=MoneySnapshot(
+            revenue_30d=_kind_total(db, user.id, MetricKind.REVENUE, since),
+            won_deals=won_count,
+            won_value=won_value,
+            open_deals=open_count,
+            open_pipeline_value=open_value,
+        ),
+        followers=_kind_latest(db, user.id, MetricKind.FOLLOWERS),
+        views_30d=_kind_total(db, user.id, MetricKind.VIEWS, since),
+        unread_notifications=unread,
+        leads_by_source=_lead_breakdown(db, user.id, Lead.source),
+        leads_by_country=_lead_breakdown(db, user.id, Lead.country),
+        auto_publish={key: bool(value) for key, value in auto_publish.items()},
+    )
 
 
 def get_dashboard_overview(db: Session, user: User, window_days: int = 30) -> DashboardOverview:

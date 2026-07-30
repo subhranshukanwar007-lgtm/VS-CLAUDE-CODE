@@ -45,9 +45,12 @@ tracked in the roadmap.
 - **AI content generation**: caption/hashtag/script generation through a
   pluggable provider strategy (`app/services/ai/`) hitting OpenAI, Anthropic,
   or Gemini directly over REST — no SDK lock-in
-- **12 AI agents**: persona-based system prompts over the same provider
-  layer; the CRM, Analytics, and Scheduler agents ground their responses with
-  real data pulled from Postgres before calling the model
+- **6 AI agents**: content, crm, sales, analytics, money, support — persona
+  system prompts over the same provider layer. Four of them (crm, sales,
+  analytics, money) ground their responses in real data pulled from Postgres
+  before calling the model; the Sales agent gets your actual hot leads by name.
+  Trimmed down from twelve: the rest were job titles from the original spec that
+  a solo operator never opened
 - **Dashboard analytics**: aggregates real `Metric` rows into follower/view/
   revenue trends, top/worst posts by engagement, and a transparent linear-
   regression 30-day growth projection (labeled as exactly that — not "AI
@@ -70,6 +73,23 @@ tracked in the roadmap.
   draft Post in the content calendar, reusing the scheduler you already have.
   `POST /video/{id}/thumbnail` generates a thumbnail image (Replicate
   `flux-schnell`) for it.
+- **Real publishing to Instagram, Facebook and Threads** (`app/integrations/meta_publisher.py`):
+  Instagram's two-step container flow (`/media` → `/media_publish`, polling
+  container status for video since transcoding is async), Facebook Page feed /
+  photos / videos / Stories, and Threads via `graph.threads.net` with its
+  500-character cap. Gated behind a **per-platform auto-publish toggle that
+  defaults to off** — a due post drops back to draft and notifies you instead of
+  posting unattended. `POST /posts/{id}/publish` is the approve action and runs
+  the same code path as the scheduler. OAuth tokens are encrypted at rest
+  (Fernet, keyed off `SECRET_KEY`)
+- **Buying-intent scoring** (`app/services/intent_service.py`): reads what each
+  lead actually wrote and scores HOT/WARM/COLD with a reason, so the one person
+  who asked "how much?" doesn't get buried. A keyword layer (including Hinglish)
+  runs synchronously on the webhook — Meta retries slow webhooks, so an obvious
+  buying question alerts within the same second — and an AI pass refines the rest
+  in the background. Notifies once on the transition into HOT, never downgrades a
+  score, and leaves a lead who has said nothing unscored rather than recording a
+  confident "cold"
 - **Engagement capture**: a real Meta webhook receiver
   (`app/services/engagement_service.py`, `POST /api/v1/webhooks/meta`) that
   verifies Meta's X-Hub-Signature-256 HMAC and turns comments on your
@@ -84,7 +104,10 @@ tracked in the roadmap.
 **Frontend** (`apps/web`) — Next.js App Router, dark glassmorphism theme:
 
 - Auth pages, protected dashboard shell (sidebar + topbar + notification bell)
-- Dashboard with live stat cards, Recharts trend charts, top/worst posts,
+- **Command Center** (`/home`, the landing page): one screen with hot leads to
+  talk to, drafts awaiting approval with an inline Approve button, what's going
+  out next, the money numbers, and lead breakdowns by platform and country
+- Analytics dashboard with live stat cards, Recharts trend charts, top/worst posts,
   growth projections, CRM snapshot
 - CRM: leads table + drag-and-drop Kanban pipeline board, with a stale-lead
   indicator and a one-click "suggest follow-up" action
@@ -93,14 +116,24 @@ tracked in the roadmap.
 - AI Video Studio: provider picker (Replicate/Higgsfield), prompt-to-video
   generation with live status polling, video preview, one-click thumbnail
   generation, and a "create post from this video" action
-- AI Agents: chat UI for all 12 agents
-- Settings: profile + brand voice + follow-up automation window + connected
-  accounts (register a business account ID for comment-to-lead capture)
+- AI Agents: chat UI for the 6 agents
+- Settings: profile, brand voice, follow-up window, connected accounts,
+  per-platform auto-publish toggles, auto-DM template and trigger keywords,
+  Threads keywords, posts per day, and reply language (English / Hinglish in
+  Roman script / Hindi) — everything editable in the browser, no code or restart
 
 Verified end-to-end in a real browser against the live backend (registration,
 CRM, calendar, agents, settings, follow-up automation, video generation) with
-zero console errors. `tsc`, `eslint`, and `next build` all pass; 56 backend
+zero console errors. `tsc`, `eslint`, and `next build` all pass; 139 backend
 pytest tests pass against a real Postgres database; ruff is clean.
+
+`tests/test_migrations.py` runs the migration chain against a scratch database
+and asserts every Postgres enum's labels match its Python enum. That test exists
+because the rest of the suite builds its schema with `create_all()` rather than
+migrations, which let five miscased enum labels ship — they were unwritable by
+the ORM, so follow-up notifications, video notifications and every Higgsfield
+generation raised `invalid input value for enum` in any migrated database while
+tests stayed green.
 
 ## Quickstart
 
@@ -155,6 +188,8 @@ clear message — they never return fabricated output.
 
 ## Documentation
 
+- [`docs/START_HERE.md`](docs/START_HERE.md) — **start here**: the whole process
+  step by step, from installing Docker to your daily routine
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the pieces fit together
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — what from the original spec isn't
   built yet, and the extension points designed for each

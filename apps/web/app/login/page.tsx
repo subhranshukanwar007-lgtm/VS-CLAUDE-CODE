@@ -25,7 +25,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      router.push("/dashboard");
+      router.push("/home");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not sign in");
     } finally {
