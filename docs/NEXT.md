@@ -33,7 +33,25 @@ is an upgrade rather than a bet.
 
 ---
 
-## Stage 1 — The moment comments start arriving
+## Stage 1 — The moment people start messaging you
+
+### WhatsApp assistant — built
+
+`app/services/whatsapp_service.py`. Someone messages your WhatsApp Business
+number, they become a CRM lead, their words get scored, and the AI answers
+questions in your voice and your language.
+
+**It replies and never initiates**, because that is where the cost is: answering
+inside the 24-hour window is free, and a click from a Click-to-WhatsApp ad opens
+72 free hours. Only business-initiated conversations are billed.
+
+**It stops the moment someone is ready to buy.** Ask the price or say "I want to
+join" and the AI hands the conversation to you and alerts you, rather than
+negotiating. Automating the close is where this kind of system starts costing
+sales.
+
+Needs `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN`, plus a dedicated
+number that is not already on the WhatsApp app.
 
 ### Comment → auto-DM (Instagram private replies)
 

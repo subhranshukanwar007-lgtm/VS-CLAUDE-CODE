@@ -63,6 +63,9 @@ class Settings(BaseSettings):
     # Meta App dashboard's webhook config, so Meta can prove it's really them.
     # META_APP_SECRET: from the Meta App dashboard, used to verify the
     # X-Hub-Signature-256 header on every incoming event.
+    whatsapp_phone_number_id: str = ""
+    whatsapp_access_token: str = ""
+
     meta_app_secret: str | None = None
     meta_webhook_verify_token: str | None = None
 

@@ -13,6 +13,7 @@ from app.models.question_opportunity import QuestionOpportunity
 from app.models.social_account import SocialAccount
 from app.models.task import Task
 from app.models.user import User
+from app.models.whatsapp import WhatsAppConversation, WhatsAppMessage
 from app.models.video_generation import VideoGeneration
 
 __all__ = [
@@ -32,4 +33,6 @@ __all__ = [
     "Task",
     "User",
     "VideoGeneration",
+    "WhatsAppConversation",
+    "WhatsAppMessage",
 ]

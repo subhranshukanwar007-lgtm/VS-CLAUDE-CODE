@@ -34,6 +34,7 @@ from app.models.question_opportunity import QuestionSource, QuestionStatus
 from app.models.user import UserRole
 from app.models.video_generation import VideoGenerationStatus
 from app.models.video_generation import VideoProviderKind
+from app.models.whatsapp import MessageDirection, MessageStatus
 
 # Enum type name in Postgres -> the Python enum it must mirror.
 ENUM_EXPECTATIONS = {
@@ -53,6 +54,8 @@ ENUM_EXPECTATIONS = {
     "question_source": QuestionSource,
     "question_status": QuestionStatus,
     "reply_language": ReplyLanguage,
+    "wa_direction": MessageDirection,
+    "wa_message_status": MessageStatus,
 }
 
 MIGRATED_DB_NAME = "social_os_migrationcheck"

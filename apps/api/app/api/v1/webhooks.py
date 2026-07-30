@@ -1,10 +1,19 @@
+import logging
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
-from app.services.engagement_service import process_webhook_payload, verify_signature
+from app.services.engagement_service import (
+    process_webhook_payload,
+    process_whatsapp_payload,
+    verify_signature,
+)
+from app.services.whatsapp_service import WhatsAppError, auto_respond, find_conversation
+
+logger = logging.getLogger("webhooks")
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
@@ -39,4 +48,19 @@ async def receive_meta_webhook(
 
     payload = await request.json()
     processed = process_webhook_payload(db, payload)
-    return {"processed": processed}
+
+    # WhatsApp arrives on the same endpoint under the `messages` field. Storing is
+    # synchronous so Meta gets a fast 200; the AI reply happens after, and a
+    # failure there must not make Meta retry the whole delivery.
+    replied = 0
+    for owner, phone in process_whatsapp_payload(db, payload):
+        conversation = find_conversation(db, owner.id, phone)
+        if conversation is None:
+            continue
+        try:
+            if await auto_respond(db, owner, conversation) is not None:
+                replied += 1
+        except WhatsAppError as exc:
+            logger.warning("whatsapp auto-reply failed for %s: %s", phone, exc)
+
+    return {"processed": processed, "whatsapp_replies": replied}

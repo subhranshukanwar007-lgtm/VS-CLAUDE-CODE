@@ -12,6 +12,7 @@ from app.models.note import Note
 from app.models.notification import NotificationType
 from app.models.post import Platform, Post
 from app.models.social_account import SocialAccount
+from app.models.user import User
 from app.services.intent_service import score_lead_fast
 from app.services.notification_service import notify
 
@@ -166,3 +167,51 @@ def process_webhook_payload(db: Session, payload: dict[str, Any]) -> int:
                 count += 1
 
     return count
+
+
+def process_whatsapp_payload(db: Session, payload: dict[str, Any]) -> list[tuple[User, str]]:
+    """Handle the `messages` field of a Meta webhook — WhatsApp arrives through the
+    same endpoint as comments, just a different field.
+
+    Returns (owner, phone) for each stored message so the caller can decide about
+    auto-replying. Replying is async and Meta retries slow webhooks, so the
+    receiving path stays synchronous and the reply is dispatched after.
+    """
+
+    from app.services.whatsapp_service import extract_messages, record_inbound
+
+    touched: list[tuple[User, str]] = []
+    for entry in payload.get("entry", []):
+        for change in entry.get("changes", []):
+            if change.get("field") != "messages":
+                continue
+            value = change.get("value", {})
+            phone_number_id = (value.get("metadata") or {}).get("phone_number_id")
+            owner = _whatsapp_owner(db, phone_number_id)
+            if owner is None:
+                logger.info("no owner resolved for whatsapp phone_number_id=%s, skipping", phone_number_id)
+                continue
+
+            for parsed in extract_messages(value):
+                stored = record_inbound(
+                    db,
+                    owner,
+                    phone=parsed["phone"],
+                    body=parsed["body"],
+                    external_id=parsed["external_id"],
+                    name=parsed["name"],
+                )
+                if stored is not None:
+                    touched.append((owner, parsed["phone"]))
+    return touched
+
+
+def _whatsapp_owner(db: Session, phone_number_id: str | None) -> User | None:
+    """The WhatsApp number lives in environment config rather than per-user, so a
+    matching payload belongs to the account owner. Resolved defensively: a
+    mismatched phone_number_id is somebody else's webhook and must be ignored.
+    """
+
+    if not phone_number_id or phone_number_id != settings.whatsapp_phone_number_id:
+        return None
+    return db.scalars(select(User).where(User.is_active.is_(True)).order_by(User.created_at)).first()

@@ -17,6 +17,7 @@ class AutomationSettingRead(BaseModel):
     dm_trigger_keywords: str | None
     dm_template: str
     dm_link: str | None
+    whatsapp_ai_enabled: bool
     threads_monitor_enabled: bool
     threads_keywords: str | None
     threads_max_per_day: int
@@ -33,6 +34,7 @@ class AutomationSettingUpdate(BaseModel):
     dm_trigger_keywords: str | None = Field(default=None, max_length=1000)
     dm_template: str | None = Field(default=None, min_length=1, max_length=4000)
     dm_link: str | None = Field(default=None, max_length=1024)
+    whatsapp_ai_enabled: bool | None = None
     threads_monitor_enabled: bool | None = None
     threads_keywords: str | None = Field(default=None, max_length=1000)
     threads_max_per_day: int | None = Field(default=None, ge=0, le=200)

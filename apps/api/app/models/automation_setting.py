@@ -76,6 +76,11 @@ class AutomationSetting(BaseModel):
     dm_template: Mapped[str] = mapped_column(Text, default=DEFAULT_DM_TEMPLATE, nullable=False)
     dm_link: Mapped[str | None] = mapped_column(String(1024), nullable=True, comment="Substituted into {link}")
 
+    # --- WhatsApp ---
+    # Inbound only: replying inside the 24-hour window is free, starting a
+    # conversation is billed and needs an approved template.
+    whatsapp_ai_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     # --- Threads keyword monitoring ---
     threads_monitor_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     threads_keywords: Mapped[str | None] = mapped_column(

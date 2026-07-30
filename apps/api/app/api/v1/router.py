@@ -18,6 +18,7 @@ from app.api.v1 import (
     users,
     video,
     webhooks,
+    whatsapp,
 )
 
 api_router = APIRouter()
@@ -37,4 +38,5 @@ api_router.include_router(social_accounts.router)
 api_router.include_router(automation.router)
 api_router.include_router(goals.router)
 api_router.include_router(ideas.router)
+api_router.include_router(whatsapp.router)
 api_router.include_router(webhooks.router)
