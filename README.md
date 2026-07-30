@@ -190,6 +190,9 @@ clear message — they never return fabricated output.
 
 - [`docs/START_HERE.md`](docs/START_HERE.md) — **start here**: the whole process
   step by step, from installing Docker to your daily routine
+- [`docs/COWORK_TEAM.md`](docs/COWORK_TEAM.md) — the judgement half: competitor
+  research, trust rules, and weekly review routines for the things automation
+  can't do
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the pieces fit together
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — what from the original spec isn't
   built yet, and the extension points designed for each
