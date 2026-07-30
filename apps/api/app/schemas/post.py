@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.post import Platform, PostFormat, PostStatus
+from app.models.post import Platform, PostFormat, PostGoal, PostStatus
 
 
 class PostCreate(BaseModel):
@@ -14,6 +14,7 @@ class PostCreate(BaseModel):
     media_url: str | None = None
     scheduled_at: datetime | None = None
     status: PostStatus = PostStatus.DRAFT
+    goal: PostGoal = PostGoal.REACH
 
 
 class PostUpdate(BaseModel):
@@ -24,6 +25,11 @@ class PostUpdate(BaseModel):
     media_url: str | None = None
     scheduled_at: datetime | None = None
     status: PostStatus | None = None
+    goal: PostGoal | None = None
+    external_post_id: str | None = Field(default=None, max_length=255)
+    """Settable so a post published outside this app can still be linked to the
+    platform post it became — that link is what lets engagement capture attribute
+    incoming leads to it."""
 
 
 class PostRead(BaseModel):
@@ -37,6 +43,7 @@ class PostRead(BaseModel):
     hashtags: str | None
     media_url: str | None
     status: PostStatus
+    goal: PostGoal
     scheduled_at: datetime | None
     published_at: datetime | None
     failure_reason: str | None

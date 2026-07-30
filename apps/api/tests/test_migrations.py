@@ -29,7 +29,7 @@ from app.models.ai_generation import AIProvider as AIProviderKind
 from app.models.automation_setting import ReplyLanguage
 from app.models.lead import LeadIntent, LeadSource, LeadStatus
 from app.models.notification import NotificationType
-from app.models.post import Platform, PostFormat, PostStatus
+from app.models.post import Platform, PostFormat, PostGoal, PostStatus
 from app.models.question_opportunity import QuestionSource, QuestionStatus
 from app.models.user import UserRole
 from app.models.video_generation import VideoGenerationStatus
@@ -46,6 +46,7 @@ ENUM_EXPECTATIONS = {
     "post_platform": Platform,
     "post_format": PostFormat,
     "post_status": PostStatus,
+    "post_goal": PostGoal,
     "user_role": UserRole,
     "video_generation_status": VideoGenerationStatus,
     "video_provider": VideoProviderKind,

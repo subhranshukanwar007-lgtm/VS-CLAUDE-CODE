@@ -87,6 +87,17 @@ class Lead(BaseModel):
     external_platform_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, comment="Commenter/sender ID from the source platform, for dedupe on repeat engagement"
     )
+    source_post_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("posts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment=(
+            "The post this lead engaged with, when engagement capture could match the "
+            "webhook's media id to a published post. ON DELETE SET NULL: deleting a post "
+            "must not delete the leads it earned."
+        ),
+    )
 
     owner: Mapped["User"] = relationship(back_populates="leads")  # noqa: F821
     stage: Mapped["PipelineStage | None"] = relationship(back_populates="leads")  # noqa: F821

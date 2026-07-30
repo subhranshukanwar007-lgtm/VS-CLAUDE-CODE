@@ -49,6 +49,7 @@ class LeadRead(BaseModel):
     estimated_value: float | None
     tags: str | None
     country: str | None
+    source_post_id: UUID | None
     intent: LeadIntent
     intent_reason: str | None
     intent_scored_at: datetime | None

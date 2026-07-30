@@ -6,6 +6,7 @@ from app.api.v1 import (
     automation,
     dashboard,
     deals,
+    goals,
     leads,
     notes,
     notifications,
@@ -33,4 +34,5 @@ api_router.include_router(ai.router)
 api_router.include_router(video.router)
 api_router.include_router(social_accounts.router)
 api_router.include_router(automation.router)
+api_router.include_router(goals.router)
 api_router.include_router(webhooks.router)
