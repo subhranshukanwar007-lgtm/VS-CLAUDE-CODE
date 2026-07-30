@@ -11,8 +11,11 @@ from app.models.post import Post
 from app.models.user import User
 from app.models.video_generation import VideoGeneration
 from app.schemas.post import PostRead
+from app.schemas.script import ContentPackage, ContentPackageRequest
 from app.schemas.video import AttachToPostRequest, VideoGenerateRequest, VideoGenerationRead
 from app.services import video_service
+from app.services.ai.base import AIProviderError
+from app.services.script_service import generate_content_package
 from app.services.video.base import VideoProviderError
 
 router = APIRouter(prefix="/video", tags=["video"])
@@ -23,6 +26,22 @@ def _get_owned_generation(db: Session, user: User, generation_id: UUID) -> Video
     if generation is None or generation.user_id != user.id:
         raise NotFoundError("Video generation")
     return generation
+
+
+@router.post("/script-package", response_model=ContentPackage)
+async def create_content_package(
+    payload: ContentPackageRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ContentPackage:
+    """One topic in, a shoot-ready package out: hook options, a timed script, the
+    prompt to paste into Higgsfield alongside your own avatar and voice, per-beat
+    B-roll directions, and on-screen captions in your chosen script."""
+
+    try:
+        return await generate_content_package(db, user, payload)
+    except AIProviderError as exc:
+        raise ServiceUnavailableError(str(exc)) from exc
 
 
 @router.post("/generate", response_model=VideoGenerationRead, status_code=201)
