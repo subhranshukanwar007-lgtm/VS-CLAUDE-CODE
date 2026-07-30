@@ -13,6 +13,7 @@ class NotificationType(StrEnum):
     POST_PUBLISHED = "post_published"
     POST_FAILED = "post_failed"
     LEAD_CREATED = "lead_created"
+    HOT_LEAD = "hot_lead"
     DEAL_WON = "deal_won"
     FOLLOW_UP_SUGGESTED = "follow_up_suggested"
     VIDEO_READY = "video_ready"

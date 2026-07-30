@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import ForbiddenError, NotFoundError, ServiceUnavailableError
 from app.database import get_db
 from app.deps import get_current_user
-from app.models.lead import Lead, LeadSource
+from app.models.lead import Lead, LeadIntent, LeadSource
 from app.models.notification import NotificationType
 from app.models.user import User, UserRole
 from app.schemas.ai import AIGenerationResult
@@ -15,6 +15,7 @@ from app.schemas.lead import FollowUpResult, LeadCreate, LeadRead, LeadUpdate
 from app.schemas.task import TaskRead
 from app.services.ai.base import AIProviderError
 from app.services.followup_service import is_lead_stale, trigger_follow_up
+from app.services.intent_service import score_lead
 from app.services.notification_service import notify
 
 router = APIRouter(prefix="/leads", tags=["crm"])
@@ -48,14 +49,29 @@ def list_leads(
     user: User = Depends(get_current_user),
     country: str | None = Query(default=None, min_length=2, max_length=2, description="ISO alpha-2, e.g. US"),
     source: LeadSource | None = None,
+    intent: LeadIntent | None = None,
 ) -> list[LeadRead]:
     query = _visible_query(user)
     if country is not None:
         query = query.where(Lead.country == country.upper())
     if source is not None:
         query = query.where(Lead.source == source)
+    if intent is not None:
+        query = query.where(Lead.intent == intent)
     leads = db.scalars(query.order_by(Lead.created_at.desc())).all()
     return [_to_read(db, lead) for lead in leads]
+
+
+@router.post("/{lead_id}/score-intent", response_model=LeadRead)
+async def score_lead_intent(
+    lead_id: UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> LeadRead:
+    """Re-analyse this lead's messages and update their buying-intent score.
+    Runs automatically on new engagement; this is the manual "check again" button."""
+
+    lead = _get_owned_lead(db, user, lead_id)
+    await score_lead(db, lead)
+    return _to_read(db, lead)
 
 
 @router.post("", response_model=LeadRead, status_code=201)

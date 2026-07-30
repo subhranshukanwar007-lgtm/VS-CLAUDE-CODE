@@ -4,16 +4,12 @@ import { useState, type FormEvent } from "react";
 import {
   BarChart3,
   Bot,
-  Crown,
   Headset,
-  Megaphone,
-  Newspaper,
-  Palette,
   PenTool,
-  Scissors,
   Send,
   TrendingUp,
   Users,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,18 +21,12 @@ import { cn } from "@/lib/utils";
 import { AGENT_IDS, type AgentId } from "@/lib/types";
 
 const AGENT_META: Record<AgentId, { label: string; icon: typeof Bot; description: string }> = {
-  ceo: { label: "CEO Agent", icon: Crown, description: "Strategy, prioritization, ROI" },
-  marketing: { label: "Marketing Agent", icon: Megaphone, description: "Campaigns, positioning, channel mix" },
-  content: { label: "Content Agent", icon: PenTool, description: "Ideation, hooks, calendars" },
-  designer: { label: "Designer Agent", icon: Palette, description: "Visual direction, thumbnails" },
-  editor: { label: "Editor Agent", icon: Scissors, description: "Pacing, cuts, retention" },
-  analytics: { label: "Analytics Agent", icon: BarChart3, description: "Performance, grounded in your data" },
-  sales: { label: "Sales Agent", icon: TrendingUp, description: "Outreach, objections, closing" },
-  crm: { label: "CRM Agent", icon: Users, description: "Pipeline, follow-ups, grounded in your data" },
-  research: { label: "Research Agent", icon: Newspaper, description: "Competitor & market research" },
-  trend: { label: "Trend Agent", icon: TrendingUp, description: "Trending sounds, hooks, formats" },
-  support: { label: "Support Agent", icon: Headset, description: "DM & comment replies" },
-  scheduler: { label: "Scheduler Agent", icon: Bot, description: "Cadence, grounded in your data" },
+  content: { label: "Content", icon: PenTool, description: "Hooks, scripts, captions, content ideas" },
+  crm: { label: "CRM", icon: Users, description: "Pipeline and follow-ups, from your real leads" },
+  sales: { label: "Sales", icon: TrendingUp, description: "Closing DMs, objections, from your real hot leads" },
+  analytics: { label: "Analytics", icon: BarChart3, description: "What's working, from your real metrics" },
+  money: { label: "Money", icon: Wallet, description: "Revenue and pricing, from your real deals" },
+  support: { label: "Support", icon: Headset, description: "DM and comment replies" },
 };
 
 interface ChatTurn {
@@ -45,7 +35,7 @@ interface ChatTurn {
 }
 
 export default function AgentsPage() {
-  const [active, setActive] = useState<AgentId>("ceo");
+  const [active, setActive] = useState<AgentId>("content");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<Record<AgentId, ChatTurn[]>>({} as Record<AgentId, ChatTurn[]>);
@@ -78,8 +68,8 @@ export default function AgentsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">AI Agents</h1>
         <p className="text-sm text-muted-foreground">
-          Twelve specialized agents, each an expert system prompt over your configured AI provider — the CRM, Analytics,
-          and Scheduler agents ground their answers in your real account data.
+          Six agents, each a specialist over your configured AI provider. CRM, Sales, Analytics and Money read your real
+          account data from the database before answering, so they talk about your actual leads and numbers.
         </p>
       </div>
 

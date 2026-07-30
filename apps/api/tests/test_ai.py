@@ -59,7 +59,10 @@ def test_agent_chat_crm_agent_grounds_with_real_data(auth_client, monkeypatch):
     assert "1 total leads" in captured["system"]
 
 
-def test_list_agents_returns_all_twelve(auth_client):
+def test_list_agents_returns_the_curated_set(auth_client):
+    """Asserts the exact roster rather than a count, so trimming or adding an agent
+    is a deliberate edit here instead of a number quietly drifting."""
+
     resp = auth_client.get("/api/v1/ai/agents")
     assert resp.status_code == 200
-    assert len(resp.json()) == 12
+    assert set(resp.json()) == {"content", "crm", "sales", "analytics", "money", "support"}

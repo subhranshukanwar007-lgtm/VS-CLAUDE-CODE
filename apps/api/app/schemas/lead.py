@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.lead import LeadSource, LeadStatus
+from app.models.lead import LeadIntent, LeadSource, LeadStatus
 from app.schemas.ai import AIGenerationResult
 from app.schemas.task import TaskRead
 
@@ -49,6 +49,9 @@ class LeadRead(BaseModel):
     estimated_value: float | None
     tags: str | None
     country: str | None
+    intent: LeadIntent
+    intent_reason: str | None
+    intent_scored_at: datetime | None
     last_follow_up_at: datetime | None = None
     is_stale: bool = False
 

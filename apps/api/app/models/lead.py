@@ -30,6 +30,23 @@ class LeadStatus(StrEnum):
     CHURNED = "churned"
 
 
+class LeadIntent(StrEnum):
+    """How close this lead looks to buying, judged by AI from what they actually
+    said (their comments, DM replies and notes).
+
+    HOT means they showed a real buying signal — asked the price, asked how to
+    join, asked about availability. That's the moment worth a human conversation,
+    so it triggers a notification. WARM is genuine interest without a buying
+    signal. COLD is a compliment or a generic reaction. UNKNOWN means not scored
+    yet, which is different from scored-and-found-cold.
+    """
+
+    UNKNOWN = "unknown"
+    COLD = "cold"
+    WARM = "warm"
+    HOT = "hot"
+
+
 class Lead(BaseModel):
     __tablename__ = "leads"
     __table_args__ = (
@@ -59,6 +76,13 @@ class Lead(BaseModel):
             "country, so this is never auto-detected from engagement."
         ),
     )
+    intent: Mapped[LeadIntent] = mapped_column(
+        Enum(LeadIntent, name="lead_intent"), default=LeadIntent.UNKNOWN, nullable=False, index=True
+    )
+    intent_reason: Mapped[str | None] = mapped_column(
+        String(500), nullable=True, comment="The AI's one-line justification, shown to the user so the score is auditable"
+    )
+    intent_scored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_follow_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     external_platform_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, comment="Commenter/sender ID from the source platform, for dedupe on repeat engagement"

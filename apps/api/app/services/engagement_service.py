@@ -12,6 +12,7 @@ from app.models.note import Note
 from app.models.notification import NotificationType
 from app.models.post import Platform
 from app.models.social_account import SocialAccount
+from app.services.intent_service import score_lead_fast
 from app.services.notification_service import notify
 
 logger = logging.getLogger("engagement")
@@ -71,6 +72,9 @@ def capture_comment_as_lead(db: Session, account: SocialAccount, comment: dict[s
     if existing is not None:
         db.add(Note(lead_id=existing.id, author_id=account.owner_id, body=f"New comment: {text}"))
         db.commit()
+        # Re-score: a follower who only ever left emojis may have just asked the
+        # price, and that's the moment worth interrupting the user for.
+        score_lead_fast(db, existing)
         return existing
 
     lead = Lead(
@@ -95,6 +99,9 @@ def capture_comment_as_lead(db: Session, account: SocialAccount, comment: dict[s
         body=text[:200],
         link=f"/crm?lead={lead.id}",
     )
+    # Score immediately so an obvious buying question ("how much?") reaches the
+    # user as a hot-lead alert in the same second the comment arrives.
+    score_lead_fast(db, lead)
     return lead
 
 

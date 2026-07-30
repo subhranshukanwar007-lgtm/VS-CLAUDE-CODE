@@ -231,19 +231,11 @@ export interface VideoGeneration {
   created_at: string;
 }
 
-export const AGENT_IDS = [
-  "ceo",
-  "marketing",
-  "content",
-  "designer",
-  "editor",
-  "analytics",
-  "sales",
-  "crm",
-  "research",
-  "trend",
-  "support",
-  "scheduler",
-] as const;
+// Must stay in sync with AGENT_PERSONAS in apps/api/app/services/agents/personas.py.
+export const AGENT_IDS = ["content", "crm", "sales", "analytics", "money", "support"] as const;
+
+// Agents whose answers are grounded in real account data pulled from Postgres
+// (DATA_GROUNDED_AGENTS on the backend).
+export const GROUNDED_AGENT_IDS: readonly AgentId[] = ["crm", "sales", "analytics", "money"];
 
 export type AgentId = (typeof AGENT_IDS)[number];
