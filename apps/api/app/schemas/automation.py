@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -20,6 +21,9 @@ class AutomationSettingRead(BaseModel):
     threads_keywords: str | None
     threads_max_per_day: int
     posts_per_day: int
+    follower_goal: int | None
+    goal_deadline: date | None
+    reels_per_week_target: int
     reply_language: ReplyLanguage
 
 
@@ -33,6 +37,9 @@ class AutomationSettingUpdate(BaseModel):
     threads_keywords: str | None = Field(default=None, max_length=1000)
     threads_max_per_day: int | None = Field(default=None, ge=0, le=200)
     posts_per_day: int | None = Field(default=None, ge=0, le=50)
+    follower_goal: int | None = Field(default=None, ge=0, le=1_000_000_000)
+    goal_deadline: date | None = None
+    reels_per_week_target: int | None = Field(default=None, ge=0, le=100)
     reply_language: ReplyLanguage | None = None
 
     @field_validator("auto_publish")

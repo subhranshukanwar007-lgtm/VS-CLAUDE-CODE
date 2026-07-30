@@ -65,6 +65,11 @@ def update_post(
     post = _get_owned_post(db, user, post_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(post, field, value)
+    # A post marked published without a publish time is an inconsistent row:
+    # anything that measures publishing over a window (goal performance, the reel
+    # count against a follower target) silently skips it.
+    if post.status == PostStatus.PUBLISHED and post.published_at is None:
+        post.published_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(post)
     return post

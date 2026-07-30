@@ -11,9 +11,10 @@ backfill.
 """
 
 import uuid
+from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -84,6 +85,25 @@ class AutomationSetting(BaseModel):
 
     # --- Content cadence ---
     posts_per_day: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    # --- Growth target ---
+    # A follower goal is an outcome, not a lever, so it is stored purely to compute
+    # pace: the dashboard turns it into "reels needed per week", which is a lever.
+    follower_goal: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, comment="Target follower count, e.g. 100000. Null means no goal set."
+    )
+    goal_deadline: Mapped[date | None] = mapped_column(
+        Date, nullable=True, comment="Date the follower goal should be reached by"
+    )
+    reels_per_week_target: Mapped[int] = mapped_column(
+        Integer,
+        default=5,
+        nullable=False,
+        comment=(
+            "Reels specifically, not posts. Reels are the only format Instagram "
+            "pushes to non-followers, so follower growth is a reel target."
+        ),
+    )
 
     # --- Voice ---
     # Applies to every AI-written reply: DMs, question answers, lead follow-ups.

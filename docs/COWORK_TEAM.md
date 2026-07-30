@@ -89,8 +89,20 @@ claims. The judgement half is yours, and it's what the Critic routine is for.
 
 ## The routines
 
-Four jobs. Each one is a prompt to paste. Run them on the cadence shown, or ask
-Cowork to remind you.
+Five jobs. Each one is installed as a **slash command** in `.claude/skills/`, so
+in any Claude Code session on this repo you type the command instead of pasting
+anything:
+
+| Command | When |
+|---|---|
+| `/scout` | Monday — what competitors are actually advertising |
+| `/critic` | Before publishing anything that matters |
+| `/review` | Sunday — what worked, from your own numbers |
+| `/verify` | Whenever someone claims something on the internet |
+| `/script` | Daily — a shoot-ready content package |
+
+The prompts below are the same jobs written out, for pasting into Cowork or any
+other assistant that doesn't read this repo's skills.
 
 ### 1. Scout — every Monday
 
