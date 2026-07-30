@@ -193,6 +193,8 @@ clear message — they never return fabricated output.
 - [`docs/COWORK_TEAM.md`](docs/COWORK_TEAM.md) — the judgement half: competitor
   research, trust rules, and weekly review routines for the things automation
   can't do
+- [`docs/NEXT.md`](docs/NEXT.md) — the staged backlog, ordered by *when* each
+  thing starts to matter, plus what is deliberately not planned and why
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the pieces fit together
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — what from the original spec isn't
   built yet, and the extension points designed for each
