@@ -9,6 +9,7 @@ import {
   Eye,
   Flame,
   Globe2,
+  Lightbulb,
   Send,
   TrendingUp,
   Users,
@@ -22,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError } from "@/lib/api-client";
 import { formatNumber } from "@/lib/utils";
-import type { CommandCenter, HotLead, PendingPost } from "@/lib/types";
+import type { CommandCenter, HotLead, PendingPost, TodaysIdea } from "@/lib/types";
 
 function relativeTime(iso: string | null): string {
   if (!iso) return "no date set";
@@ -69,6 +70,47 @@ function StatTile({
           <p className="text-lg font-semibold leading-tight">{value}</p>
           {hint ? <p className="truncate text-xs text-muted-foreground">{hint}</p> : null}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TodaysIdeaCard({ today }: { today: TodaysIdea }) {
+  const idea = today.idea;
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Lightbulb className="h-4 w-4 text-primary" />
+          Make this today
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {idea === null ? (
+          <p className="text-sm text-muted-foreground">{today.reason ?? "No ideas left in your bank."}</p>
+        ) : (
+          <>
+            <p className="text-lg font-medium leading-snug">{idea.problem}</p>
+            {idea.angle ? (
+              <p className="border-l-2 border-primary/40 pl-3 text-sm text-muted-foreground">{idea.angle}</p>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">{idea.suggested_goal}</Badge>
+              <Badge variant="outline">{idea.suggested_format}</Badge>
+              {today.reason ? (
+                <span className="text-xs text-muted-foreground">{today.reason}</span>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button asChild size="sm">
+                <Link href={`/video?topic=${encodeURIComponent(idea.problem)}`}>Write the script</Link>
+              </Button>
+              <Button asChild size="sm" variant="ghost">
+                <Link href="/content">See all ideas</Link>
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
@@ -276,6 +318,8 @@ export default function CommandCenterPage() {
           hint={`${data.money.open_deals} open deal${data.money.open_deals === 1 ? "" : "s"}`}
         />
       </div>
+
+      <TodaysIdeaCard today={data.todays_idea} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="bg-card/40">

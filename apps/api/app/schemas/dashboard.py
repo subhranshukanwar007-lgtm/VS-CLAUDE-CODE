@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from app.models.lead import LeadIntent
 from app.models.post import Platform, PostFormat, PostStatus
+from app.schemas.idea import TodaysIdea
 
 
 class MetricPoint(BaseModel):
@@ -125,3 +126,4 @@ class CommandCenter(BaseModel):
     leads_by_source: list[LeadBreakdown]
     leads_by_country: list[LeadBreakdown]
     auto_publish: dict[str, bool]
+    todays_idea: TodaysIdea

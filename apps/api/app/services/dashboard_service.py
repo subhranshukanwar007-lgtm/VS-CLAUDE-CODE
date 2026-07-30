@@ -24,6 +24,7 @@ from app.schemas.dashboard import (
     TopPost,
 )
 from app.services.automation_settings_service import get_or_create
+from app.services.idea_service import get_todays_idea
 
 _SUM_KINDS = {
     MetricKind.VIEWS,
@@ -239,6 +240,7 @@ def get_command_center(db: Session, user: User, window_days: int = 30) -> Comman
         leads_by_source=_lead_breakdown(db, user.id, Lead.source),
         leads_by_country=_lead_breakdown(db, user.id, Lead.country),
         auto_publish={key: bool(value) for key, value in auto_publish.items()},
+        todays_idea=get_todays_idea(db, user),
     )
 
 

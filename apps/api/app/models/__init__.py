@@ -1,6 +1,7 @@
 from app.models.ai_generation import AIGeneration
 from app.models.audit_log import AuditLog
 from app.models.automation_setting import AutomationSetting
+from app.models.content_idea import ContentIdea
 from app.models.deal import Deal
 from app.models.lead import Lead
 from app.models.metric import Metric
@@ -18,6 +19,7 @@ __all__ = [
     "AIGeneration",
     "AuditLog",
     "AutomationSetting",
+    "ContentIdea",
     "Deal",
     "Lead",
     "Metric",

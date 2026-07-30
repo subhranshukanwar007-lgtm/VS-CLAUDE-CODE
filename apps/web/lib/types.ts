@@ -243,6 +243,26 @@ export interface MoneySnapshot {
   open_pipeline_value: number;
 }
 
+export type PostGoal = "reach" | "leads" | "sales" | "trust" | "saves";
+
+export interface ContentIdea {
+  id: string;
+  problem: string;
+  angle: string | null;
+  suggested_goal: PostGoal;
+  suggested_format: PostFormat;
+  source: "seed" | "custom";
+  times_used: number;
+  last_used_at: string | null;
+  is_active: boolean;
+}
+
+export interface TodaysIdea {
+  idea: ContentIdea | null;
+  reason: string | null;
+  total_active: number;
+}
+
 export interface CommandCenter {
   hot_leads: HotLead[];
   needs_approval: PendingPost[];
@@ -254,6 +274,7 @@ export interface CommandCenter {
   leads_by_source: LeadBreakdown[];
   leads_by_country: LeadBreakdown[];
   auto_publish: Record<string, boolean>;
+  todays_idea: TodaysIdea;
 }
 
 export interface AutomationSetting {
