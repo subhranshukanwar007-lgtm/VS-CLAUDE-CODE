@@ -53,25 +53,38 @@ sales.
 Needs `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN`, plus a dedicated
 number that is not already on the WhatsApp app.
 
-### Comment → auto-DM (Instagram private replies)
+### Comment → auto-DM (Instagram private replies) — **built**
 
-**Trigger:** you're getting more than a handful of comments per post.
-
-**Why now:** this is the mechanic in every "AI social media" reel you've seen —
-*"comment PLAN and I'll DM you"*. It catches someone at the exact second they
-raised their hand, which is when they convert best. Doing it by hand is possible
-at 5 comments a day and impossible at 50.
+This is the mechanic in every "AI social media" reel — *"comment PLAN and I'll
+DM you"*. It catches someone at the exact second they raised their hand, which
+is when they convert best. Doing it by hand is possible at 5 comments a day and
+impossible at 50.
 
 **What Meta allows** (verified against their docs, and it shapes the design):
 - A private reply must be sent within **7 days** of the comment
-- **One private reply per comment, ever** — Meta enforces this, so the sender has
-  to track what it already sent and never retry
+- **One private reply per comment, ever** — Meta enforces this server-side
 - If they reply, that opens a normal **24-hour window** for free conversation
 
-**Already built:** the `dm_enabled`, `dm_template`, `dm_trigger_keywords` and
-`dm_link` settings, editable in the Settings UI. **Missing:** the sender itself.
+**How it works.** The Meta webhook writes a `private_replies` row for *every*
+comment — PENDING if it matched a trigger keyword, SKIPPED if not — and does no
+network call at all. A Celery task every 30 seconds sends the PENDING ones. The
+split matters: Meta retries webhooks it thinks were slow, and the unique
+constraint on `comment_id` is what makes a redelivery harmless. A SKIPPED row is
+a decision on the record, so turning the feature on later cannot retro-DM
+someone who commented last week.
 
-**Worth:** the highest-conversion feature left unbuilt.
+Keyword matching is word-boundary based: *plan* catches "PLAN" and "plans", not
+"planet" and not the "plan" inside "explanation".
+
+`POST /automation/dm-preview` dry-runs a comment and shows the exact message
+without sending. It exists because you get one private reply per comment — there
+is no way to test on a real comment and then fix the wording.
+
+**Not built:** the Settings UI for the queue. The API is there
+(`/automation/dm-queue`, `/summary`, `/{id}/retry`); nothing renders it yet.
+
+**Needs:** `instagram_manage_messages` (Instagram) or `pages_messaging`
+(Facebook) on the connected account's token.
 
 ---
 

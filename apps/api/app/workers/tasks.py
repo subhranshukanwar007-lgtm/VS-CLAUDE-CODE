@@ -9,6 +9,7 @@ from app.database import SessionLocal
 from app.models.notification import NotificationType
 from app.models.post import Post, PostStatus
 from app.models.user import User
+from app.services.dm_service import send_pending
 from app.services.followup_service import run_follow_up_automation
 from app.services.notification_service import notify
 from app.services.scheduler_service import publish_due_posts
@@ -86,6 +87,21 @@ def run_follow_up_automation_task() -> int:
         if count:
             logger.info("triggered %d lead follow-ups", count)
         return count
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.workers.tasks.send_pending_dms_task")
+def send_pending_dms_task() -> int:
+    """Flush the auto-DM queue. Runs often because the value of this DM decays
+    fast — someone who commented "PLAN" two hours ago has moved on."""
+
+    db = SessionLocal()
+    try:
+        counts = asyncio.run(send_pending(db))
+        if any(counts.values()):
+            logger.info("auto-DM queue: %s", counts)
+        return counts["sent"]
     finally:
         db.close()
 

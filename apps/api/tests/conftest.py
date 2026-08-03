@@ -39,6 +39,21 @@ def client():
     return TestClient(app)
 
 
+@pytest.fixture
+def db_session():
+    """A plain session for tests that call a service directly.
+
+    Separate from the session the TestClient uses, so a test reading rows here
+    sees only what the API actually committed.
+    """
+
+    db = _TestSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 def _register_and_login(email: str, full_name: str) -> TestClient:
     api = TestClient(app)
     api.post(

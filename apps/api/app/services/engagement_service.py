@@ -13,6 +13,7 @@ from app.models.notification import NotificationType
 from app.models.post import Platform, Post
 from app.models.social_account import SocialAccount
 from app.models.user import User
+from app.services.dm_service import queue_private_reply
 from app.services.intent_service import score_lead_fast
 from app.services.notification_service import notify
 
@@ -162,9 +163,14 @@ def process_webhook_payload(db: Session, payload: dict[str, Any]) -> int:
         for change in entry.get("changes", []):
             if change.get("field") != "comments":
                 continue
-            lead = capture_comment_as_lead(db, account, change.get("value", {}))
+            value = change.get("value", {})
+            lead = capture_comment_as_lead(db, account, value)
             if lead is not None:
                 count += 1
+            # Queue (never send) the auto-DM here: Meta retries webhooks it thinks
+            # were slow, so no network call belongs on this path. The row is the
+            # durable record that this comment has already been decided.
+            queue_private_reply(db, account, value, lead)
 
     return count
 

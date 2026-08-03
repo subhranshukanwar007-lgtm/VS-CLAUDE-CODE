@@ -9,6 +9,7 @@ from app.models.note import Note
 from app.models.notification import Notification
 from app.models.pipeline import PipelineStage
 from app.models.post import Post
+from app.models.private_reply import PrivateReply
 from app.models.question_opportunity import QuestionOpportunity
 from app.models.social_account import SocialAccount
 from app.models.task import Task
@@ -28,6 +29,7 @@ __all__ = [
     "Notification",
     "PipelineStage",
     "Post",
+    "PrivateReply",
     "QuestionOpportunity",
     "SocialAccount",
     "Task",

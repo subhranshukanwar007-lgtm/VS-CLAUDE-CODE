@@ -1,10 +1,11 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.automation_setting import ReplyLanguage
 from app.models.post import Platform
+from app.models.private_reply import PrivateReplyStatus
 
 
 class AutomationSettingRead(BaseModel):
@@ -57,6 +58,48 @@ class AutomationSettingUpdate(BaseModel):
         if unknown:
             raise ValueError(f"unknown platform(s): {', '.join(sorted(unknown))}")
         return value
+
+
+class PrivateReplyRead(BaseModel):
+    """One row of the auto-DM queue, as the Settings screen shows it.
+
+    ``message`` is included deliberately: when a DM goes wrong the user's first
+    question is "what did it actually say to them?", and the stored copy is the
+    only honest answer once the template has been edited.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    lead_id: UUID | None
+    platform: Platform
+    comment_id: str
+    recipient_username: str | None
+    message: str
+    status: PrivateReplyStatus
+    error: str | None
+    sent_at: datetime | None
+    created_at: datetime
+
+
+class DMPreviewRequest(BaseModel):
+    """Dry-run one comment against the current settings. Sends nothing."""
+
+    comment: str = Field(min_length=1, max_length=2200)
+    username: str = Field(default="there", max_length=255)
+
+
+class DMPreviewResponse(BaseModel):
+    would_send: bool
+    reason: str
+    message: str | None
+
+
+class DMQueueSummary(BaseModel):
+    pending: int
+    sent: int
+    failed: int
+    skipped: int
 
 
 class PlatformCapability(BaseModel):
