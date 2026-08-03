@@ -89,17 +89,52 @@ claims. The judgement half is yours, and it's what the Critic routine is for.
 
 ## The routines
 
-Five jobs. Each one is installed as a **slash command** in `.claude/skills/`, so
-in any Claude Code session on this repo you type the command instead of pasting
-anything:
+Each one is installed as a **slash command** in `.claude/skills/`, so in any
+Claude Code session on this repo — including the Claude Code extension inside VS
+Code — you type the command instead of pasting anything:
 
 | Command | When |
 |---|---|
+| **`/daily-run`** | **Daily — the whole content leg, hook to published reel to armed DM trigger** |
+| **`/pipeline`** | **Daily, later — work the leads that came back** |
 | `/scout` | Monday — what competitors are actually advertising |
 | `/critic` | Before publishing anything that matters |
 | `/review` | Sunday — what worked, from your own numbers |
 | `/verify` | Whenever someone claims something on the internet |
-| `/script` | Daily — a shoot-ready content package |
+| `/script` | A shoot-ready content package on its own |
+
+**In VS Code:** open this repo, open the Claude Code panel, type `/daily-run`.
+That's the whole thing. The app must be running (`docker compose up`) because
+every stage talks to it on `localhost:8000`.
+
+### The two that run the business
+
+`/daily-run` and `/pipeline` are the ones added last, and they chain the pieces
+that already existed into one command each.
+
+**`/daily-run`** reads what actually worked from `/goals/performance`, checks the
+Meta Ad Library for what competitors are paying to keep running, writes the
+package, generates the video against your own Higgsfield avatar, runs the
+virality check *before* anything is posted, publishes, and then — the stage that
+makes the rest pay — arms `dm_trigger_keywords` to match the CTA in the caption
+and rehearses the DM with `/automation/dm-preview`. If the caption says "comment
+PLAN" and the trigger word is something else, nobody gets anything and the post
+looks like it worked.
+
+**`/pipeline`** checks the DM queue for failures first (a broken token means
+everyone who commented today got nothing), then hot leads, then call briefs, then
+follow-up drafts, then outbound.
+
+Both skills stop and say so when a stage fails rather than reporting a clean run.
+A silent half-run is worse than a loud stop — you find out three days later that
+nothing posted.
+
+**What they do not do**, stated because the alternative is you assuming
+otherwise: no calls are placed (no voice provider is connected to this system at
+all), no message is sent on your behalf except the WhatsApp replies and the
+comment auto-DM you configured, and Apollo cannot find consumer leads — it is a
+B2B database, useful here only for gym owners, corporate wellness and other
+coaches.
 
 The prompts below are the same jobs written out, for pasting into Cowork or any
 other assistant that doesn't read this repo's skills.

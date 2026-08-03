@@ -20,6 +20,14 @@ class GoalPerformance(BaseModel):
 
 class GoalPerformanceReport(BaseModel):
     performance: list[GoalPerformance]
+
     unattributed_leads: int
+    """Came in on their own, but we can't tell which post earned them. A rising
+    number here means the tracking is broken, not that the content is working."""
+
+    outbound_leads: int = 0
+    """Sourced by us rather than by them. Counted apart from unattributed, because
+    their origin is known — it just isn't a post."""
+
     best_goal: PostGoal | None = None
     recommendations: list[GoalRecommendation]

@@ -20,6 +20,13 @@ class LeadSource(StrEnum):
     WEBSITE = "website"
     REFERRAL = "referral"
     MANUAL = "manual"
+    # Sourced by us rather than by them — an Apollo search, a list, a cold
+    # approach. Kept separate from the inbound sources on purpose: goal
+    # performance measures leads *per post*, and outbound leads never came from
+    # a post. Filing them as OTHER would quietly inflate the count of leads the
+    # content failed to attribute, which is the one number that tells the user
+    # their tracking is broken.
+    OUTBOUND = "outbound"
     OTHER = "other"
 
 

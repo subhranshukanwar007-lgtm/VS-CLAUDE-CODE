@@ -208,6 +208,21 @@ def test_manually_added_leads_are_reported_as_unattributed(auth_client):
     assert all(row["leads"] == 0 for row in report["performance"])
 
 
+def test_outbound_leads_are_counted_apart_from_unattributed(auth_client):
+    """A lead we sourced ourselves has a known origin — it just isn't a post.
+    Counting it as unattributed would make the one number that says "your
+    attribution is broken" go up every time outbound works."""
+
+    auth_client.post("/api/v1/leads", json={"full_name": "Walked in"})
+    auth_client.post(
+        "/api/v1/leads", json={"full_name": "HR at a gym chain", "source": "outbound"}
+    )
+
+    report = auth_client.get("/api/v1/goals/performance").json()
+    assert report["unattributed_leads"] == 1
+    assert report["outbound_leads"] == 1
+
+
 def test_won_deal_value_is_credited_to_the_goal(auth_client, monkeypatch):
     monkeypatch.setattr(config_module.settings, "meta_app_secret", "shh")
     account = _connect_account(auth_client)

@@ -21,7 +21,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.models.deal import Deal, DealStatus
-from app.models.lead import Lead, LeadIntent
+from app.models.lead import Lead, LeadIntent, LeadSource
 from app.models.post import RECOMMENDED_FORMATS, Post, PostGoal, PostStatus
 from app.models.user import User
 from app.schemas.goals import GoalPerformance, GoalPerformanceReport, GoalRecommendation
@@ -81,10 +81,25 @@ def get_goal_performance(db: Session, user: User) -> GoalPerformanceReport:
             )
         )
 
+    # Outbound leads are excluded rather than counted as unattributed. They have a
+    # known origin that simply isn't a post, so counting them here would make the
+    # one number that says "your attribution is broken" go up every time outbound
+    # works.
     unattributed = int(
         db.scalar(
             select(func.count()).select_from(Lead).where(
-                Lead.owner_id == user.id, Lead.source_post_id.is_(None)
+                Lead.owner_id == user.id,
+                Lead.source_post_id.is_(None),
+                Lead.source != LeadSource.OUTBOUND,
+            )
+        )
+        or 0
+    )
+
+    outbound = int(
+        db.scalar(
+            select(func.count()).select_from(Lead).where(
+                Lead.owner_id == user.id, Lead.source == LeadSource.OUTBOUND
             )
         )
         or 0
@@ -99,6 +114,7 @@ def get_goal_performance(db: Session, user: User) -> GoalPerformanceReport:
     return GoalPerformanceReport(
         performance=performance,
         unattributed_leads=unattributed,
+        outbound_leads=outbound,
         best_goal=best,
         recommendations=recommendations(),
     )
