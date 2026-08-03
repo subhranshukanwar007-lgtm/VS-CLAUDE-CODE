@@ -1,0 +1,62 @@
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.models.lead import LeadIntent, LeadSource, LeadStatus
+from app.schemas.ai import AIGenerationResult
+from app.schemas.task import TaskRead
+
+
+class LeadCreate(BaseModel):
+    full_name: str = Field(min_length=1, max_length=255)
+    email: str | None = None
+    phone: str | None = None
+    company: str | None = None
+    source: LeadSource = LeadSource.MANUAL
+    status: LeadStatus = LeadStatus.LEAD
+    stage_id: UUID | None = None
+    estimated_value: float | None = None
+    tags: str | None = None
+    country: str | None = Field(default=None, min_length=2, max_length=2)
+
+
+class LeadUpdate(BaseModel):
+    full_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    company: str | None = None
+    source: LeadSource | None = None
+    status: LeadStatus | None = None
+    stage_id: UUID | None = None
+    estimated_value: float | None = None
+    tags: str | None = None
+    country: str | None = Field(default=None, min_length=2, max_length=2)
+
+
+class LeadRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    owner_id: UUID
+    stage_id: UUID | None
+    full_name: str
+    email: str | None
+    phone: str | None
+    company: str | None
+    source: LeadSource
+    status: LeadStatus
+    estimated_value: float | None
+    tags: str | None
+    country: str | None
+    source_post_id: UUID | None
+    intent: LeadIntent
+    intent_reason: str | None
+    intent_scored_at: datetime | None
+    last_follow_up_at: datetime | None = None
+    is_stale: bool = False
+
+
+class FollowUpResult(BaseModel):
+    generation: AIGenerationResult
+    task: TaskRead
